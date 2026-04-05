@@ -1,0 +1,65 @@
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const { globalErrorHandler } = require("./middlewares/error.middleware");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middlewares
+app.use(cors());
+app.use(helmet());
+app.use(morgan("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+const authRoutes = require("./routes/auth.routes");
+const userRoutes = require("./routes/user.routes");
+const childRoutes = require("./routes/child.routes");
+const diagnosisRoutes = require("./routes/diagnosis.routes");
+const therapyRoutes = require("./routes/therapy.routes");
+const gameRoutes = require("./routes/game.routes");
+const progressRoutes = require("./routes/progress.routes");
+const therapistRoutes = require("./routes/therapist.routes");
+const adminRoutes = require("./routes/admin.routes");
+const paymentRoutes = require("./routes/payment.routes");
+const mlRoutes = require("./routes/ml.routes");
+const audioRoutes = require("./routes/audio.routes");
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/children", childRoutes);
+app.use("/api/diagnosis", diagnosisRoutes);
+app.use("/api/therapy", therapyRoutes);
+app.use("/api/game", gameRoutes);
+app.use("/api/progress", progressRoutes);
+app.use("/api/therapist", therapistRoutes);
+app.use("/api/admin", adminRoutes);
+
+// New routes
+app.use("/api/payment", paymentRoutes);
+app.use("/api/v1/predict", mlRoutes);
+app.use("/api/v1/audio", audioRoutes);
+
+// Serve static files
+app.use("/uploads", express.static("uploads"));
+
+// Health check
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "Welcome to Speech Delay Detection API",
+    version: "1.0.0",
+    status: "running"
+  });
+});
+
+// Global error handler (must be last)
+app.use(globalErrorHandler);
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+});

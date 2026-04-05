@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  THERAPIST
+  PARENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  role            Role             @default(PARENT)
+  name            String?
+  isBlocked       Boolean          @default(false)
+  blockedReason   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  children        Child[]
+  therapySessions TherapySession[] @relation("TherapistSessions")
+  educationContents EducationContent[]
+
+  @@map("users")
+}
+
+model Child {
+  id              String            @id @default(uuid())
+  parentId        String
+  parent          User              @relation(fields: [parentId], references: [id])
+  name            String
+  dateOfBirth     DateTime
+  gender          Gender
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  diagnoses       Diagnosis[]
+  therapySessions TherapySession[]
+  gameLogs        GameLog[]
+  progressUploads ProgressUpload[]
+
+  @@map("children")
+}
+
+model Diagnosis {
+  id            String         @id @default(uuid())
+  childId       String
+  child         Child          @relation(fields: [childId], references: [id])
+  symptoms      Json
+  riskLevel     RiskLevel
+  score         Float
+  recommendation String?
+  createdAt     DateTime       @default(now())
+  mlPrediction  MlPrediction?
+
+  @@map("diagnoses")
+}
+
+model TherapySession {
+  id            String        @id @default(uuid())
+  childId       String
+  child         Child         @relation(fields: [childId], references: [id])
+  therapistId   String?
+  therapist     User?         @relation("TherapistSessions", fields: [therapistId], references: [id])
+  schedule      DateTime
+  paymentStatus PaymentStatus @default(PENDING)
+  therapyType   String
+  isActive      Boolean       @default(false)
+  transactionId String?
+  paymentUrl    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("therapy_sessions")
+}
+
+model GameLog {
+  id        String   @id @default(uuid())
+  childId   String
+  child     Child    @relation(fields: [childId], references: [id])
+  gameScore Int
+  duration  Int      // in seconds
+  gameType  String
+  playedAt  DateTime @default(now())
+
+  @@map("game_logs")
+}
+
+model ProgressUpload {
+  id                  String   @id @default(uuid())
+  childId             String
+  child               Child    @relation(fields: [childId], references: [id])
+  fileUrl             String
+  parentNotes         String?
+  therapistEvaluation String?
+  createdAt           DateTime @default(now())
+
+  @@map("progress_uploads")
+}
+
+model MlPrediction {
+  id               String    @id @default(uuid())
+  diagnosisId      String    @unique
+  diagnosis        Diagnosis @relation(fields: [diagnosisId], references: [id])
+  inputData        Json
+  modelVersion     String
+  predictionResult Float
+  actualLabel      String?
+  createdAt        DateTime  @default(now())
+
+  @@map("ml_predictions")
+}
+
+model EducationContent {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   // Text or URL
+  type      String   // 'ARTICLE' or 'VIDEO'
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("education_contents")
+}

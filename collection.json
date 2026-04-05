@@ -1,0 +1,894 @@
+{
+  "info": {
+    "name": "Speech Delay Detection API",
+    "description": "Complete API collection for Speech Delay Detection System built with Express.js + TiDB MySQL",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_email",
+      "value": "admin@example.com",
+      "type": "string"
+    },
+    {
+      "key": "therapist_email",
+      "value": "therapist1@example.com",
+      "type": "string"
+    },
+    {
+      "key": "parent_email",
+      "value": "parent1@example.com",
+      "type": "string"
+    },
+    {
+      "key": "default_password",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "child_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Register New User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"New User\",\n  \"role\": \"PARENT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account. Roles: PARENT, THERAPIST, ADMIN"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.token);",
+                  "    console.log('Token saved to collection variables');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{default_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login and get JWT token. Token will be auto-saved to collection variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Login as Therapist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{therapist_email}}\",\n  \"password\": \"{{default_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as therapist to test therapist endpoints"
+          },
+          "response": []
+        },
+        {
+          "name": "Login as Parent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{parent_email}}\",\n  \"password\": \"{{default_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as parent to test parent endpoints"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👤 Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Get current logged-in user profile"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👶 Children",
+      "item": [
+        {
+          "name": "Create Child",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('child_id', jsonData.data.id);",
+                  "    console.log('Child ID saved: ' + jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Child\",\n  \"dateOfBirth\": \"2021-05-15\",\n  \"gender\": \"MALE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/children",
+              "host": ["{{base_url}}"],
+              "path": ["api", "children"]
+            },
+            "description": "Create a new child record (PARENT role required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All My Children",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/children",
+              "host": ["{{base_url}}"],
+              "path": ["api", "children"]
+            },
+            "description": "Get all children for the logged-in parent"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Child by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/children/{{child_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "children", "{{child_id}}"]
+            },
+            "description": "Get detailed information about a specific child"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔍 Diagnosis",
+      "item": [
+        {
+          "name": "Create Diagnosis (Check Symptoms)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"childId\": \"{{child_id}}\",\n  \"symptoms\": [\n    \"tidak_menyapa\",\n    \"tidak_menatap_mata\",\n    \"kosakata_terbatas\",\n    \"tidak_menunjuk\"\n  ],\n  \"useML\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/diagnosis/check",
+              "host": ["{{base_url}}"],
+              "path": ["api", "diagnosis", "check"]
+            },
+            "description": "Submit symptoms and get speech delay risk assessment. Set useML=false to skip ML prediction."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Diagnosis History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/diagnosis/history/{{child_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "diagnosis", "history", "{{child_id}}"]
+            },
+            "description": "Get all diagnosis history for a child"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏥 Therapy",
+      "item": [
+        {
+          "name": "Book Therapy Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"childId\": \"{{child_id}}\",\n  \"therapistId\": \"\",\n  \"schedule\": \"2026-04-20T10:00:00Z\",\n  \"therapyType\": \"Speech Therapy\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/therapy/booking",
+              "host": ["{{base_url}}"],
+              "path": ["api", "therapy", "booking"]
+            },
+            "description": "Book a therapy session. Returns payment URL for Midtrans payment."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Therapy History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/therapy/history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "therapy", "history"]
+            },
+            "description": "Get all therapy sessions for the logged-in parent's children"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🎮 Game Logs",
+      "item": [
+        {
+          "name": "Log Game Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"childId\": \"{{child_id}}\",\n  \"gameScore\": 85,\n  \"duration\": 180,\n  \"gameType\": \"Kata Bergambar\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/game/log",
+              "host": ["{{base_url}}"],
+              "path": ["api", "game", "log"]
+            },
+            "description": "Log a game playing session (duration in seconds)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Game History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/game/history/{{child_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "game", "history", "{{child_id}}"]
+            },
+            "description": "Get game playing history for a child"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📸 Progress Uploads",
+      "item": [
+        {
+          "name": "Upload Progress (Photo/Video)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "notes",
+                  "value": "Anak mulai bisa mengucapkan kata 'mama' dengan lebih jelas",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/progress/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "progress", "upload"]
+            },
+            "description": "Upload photo or video of child's progress. Max 10MB for photos, 50MB for videos."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🤖 ML Predictions",
+      "item": [
+        {
+          "name": "Predict Speech Delay",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"child_id\": \"{{child_id}}\",\n  \"features\": [1, 0, 1, 1, 0, 1]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/predict/speech-delay",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "predict", "speech-delay"]
+            },
+            "description": "Get ML-based speech delay prediction. Requires Python ML service running."
+          },
+          "response": []
+        },
+        {
+          "name": "Voice Analysis",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "child_id",
+                  "value": "{{child_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/predict/voice-analysis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "predict", "voice-analysis"]
+            },
+            "description": "Upload audio file for voice pattern analysis. Supported: MP3, AAC, WAV, M4A"
+          },
+          "response": []
+        },
+        {
+          "name": "Check ML Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/predict/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "predict", "health"]
+            },
+            "description": "Check if ML Python service is running and accessible"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🎤 Audio Upload",
+      "item": [
+        {
+          "name": "Upload & Analyze Audio",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "child_id",
+                  "value": "{{child_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/audio/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audio", "upload"]
+            },
+            "description": "Upload audio file and get immediate ML analysis"
+          },
+          "response": []
+        },
+        {
+          "name": "Store Audio Only",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "child_id",
+                  "value": "{{child_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "notes",
+                  "value": "Audio recording sample",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/audio/store",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audio", "store"]
+            },
+            "description": "Upload and store audio file without immediate analysis"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👨‍⚕️ Therapist",
+      "item": [
+        {
+          "name": "Get My Patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/therapist/patients",
+              "host": ["{{base_url}}"],
+              "path": ["api", "therapist", "patients"]
+            },
+            "description": "Get all patients scheduled with this therapist (THERAPIST role required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/therapist/patient/{{child_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "therapist", "patient", "{{child_id}}"]
+            },
+            "description": "Get detailed information about a patient including diagnoses, therapy sessions, game logs"
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Patient Progress",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"progressId\": \"\",\n  \"evaluation\": \"Anak menunjukkan peningkatan dalam kosakata. Disarankan untuk melanjutkan terapi 2x seminggu.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/therapist/evaluate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "therapist", "evaluate"]
+            },
+            "description": "Submit therapist evaluation for a progress upload"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Patient Report (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/therapist/report/{{child_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "therapist", "report", "{{child_id}}"]
+            },
+            "description": "Generate and download PDF report for a patient's progress"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Admin",
+      "item": [
+        {
+          "name": "Get Dashboard Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            },
+            "description": "Get dashboard stats: user count, revenue, sessions, diagnoses (ADMIN role required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard with Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard?startDate=2026-04-01&endDate=2026-04-30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-04-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-04-30"
+                }
+              ]
+            },
+            "description": "Get dashboard stats filtered by date range"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all users with pagination (ADMIN role required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users?search=admin&role=PARENT&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "admin"
+                },
+                {
+                  "key": "role",
+                  "value": "PARENT"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search users by name or email with optional role filter"
+          },
+          "response": []
+        },
+        {
+          "name": "Block User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"block\",\n  \"reason\": \"Violation of terms of service\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            },
+            "description": "Block a user account (ADMIN role required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Unblock User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"unblock\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            },
+            "description": "Unblock a user account (ADMIN role required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"delete\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            },
+            "description": "Permanently delete a user and all their data (ADMIN role required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Education Content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tips Stimulasi Bicara di Rumah\",\n  \"content\": \"Artikel tentang cara menstimulasi perkembangan bicara anak...\",\n  \"type\": \"ARTICLE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/education",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "education"]
+            },
+            "description": "Add new education content. Type: ARTICLE or VIDEO"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💳 Payment",
+      "item": [
+        {
+          "name": "Payment Webhook (Midtrans)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"THERAPY-session-id-here\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"165000.00\",\n  \"payment_type\": \"credit_card\",\n  \"transaction_status\": \"settlement\",\n  \"fraud_status\": \"accept\",\n  \"signature_key\": \"hash-here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/payment/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payment", "webhook"]
+            },
+            "description": "Midtrans payment webhook notification (no auth required, verified by signature)"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/payment/status/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payment", "status", "{{session_id}}"]
+            },
+            "description": "Manually check payment status for a therapy session"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
