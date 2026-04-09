@@ -35,6 +35,7 @@ const getPatientDetail = async (req, res) => {
         therapySessions: true,
         gameLogs: true,
         progressUploads: true,
+        progressNotes: true,
       },
     });
 
@@ -96,9 +97,287 @@ const generateReport = async (req, res) => {
   }
 };
 
+const getReportHistory = async (req, res) => {
+  try {
+    const therapistId = req.user.id;
+
+    // Get progress notes created by this therapist
+    const progressNotes = await prisma.progressNote.findMany({
+      where: { therapistId },
+      include: {
+        child: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { date: "desc" },
+    });
+
+    // If no progress notes, fallback to therapy sessions as reports
+    if (progressNotes.length === 0) {
+      // Get therapy sessions to show as reports
+      const sessions = await prisma.therapySession.findMany({
+        where: { therapistId },
+        include: {
+          child: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { schedule: "desc" },
+        take: 20,
+      });
+
+      // Transform sessions to match LaporanModel format
+      const laporanFromSessions = sessions.map((session) => ({
+        id: session.id,
+        patient_id: session.childId,
+        patient_name: session.child.name,
+        patient_avatar: "",
+        status: session.isActive ? "SENT" : "DRAFT",
+        summary: `Sesi ${session.therapyType} - ${session.isActive ? "Aktif" : "Tidak Aktif"}`,
+        date: session.schedule.toISOString().split("T")[0],
+        terapis_id: therapistId,
+      }));
+
+      return sendResponse(res, 200, "Report history fetched (from sessions)", laporanFromSessions);
+    }
+
+    // Transform progress notes to match LaporanModel format
+    const laporanList = progressNotes.map((note) => {
+      return {
+        id: note.id,
+        patient_id: note.childId,
+        patient_name: note.child.name,
+        patient_avatar: "",
+        status: note.status || "DRAFT",  // Use the actual status from database
+        summary: note.content.substring(0, 100) + (note.content.length > 100 ? "..." : ""),
+        date: note.date.toISOString().split("T")[0],
+        terapis_id: therapistId,
+      };
+    });
+
+    return sendResponse(res, 200, "Report history fetched", laporanList);
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
+const createReport = async (req, res) => {
+  try {
+    const therapistId = req.user.id;
+    const {
+      childId,
+      sessionId,
+      speechClarity,
+      vocabulary,
+      socialInteraction,
+      progressNotes,
+      barriers,
+      parentExercises,
+      sessionDate,
+      sessionNumber,
+      title,
+    } = req.body;
+
+    // Validate required fields
+    if (!childId || !title || !progressNotes) {
+      return sendResponse(res, 400, "childId, title, and progressNotes are required");
+    }
+
+    // Verify child exists
+    const child = await prisma.child.findUnique({
+      where: { id: childId },
+    });
+
+    if (!child) {
+      return sendResponse(res, 404, "Child not found");
+    }
+
+    // Create progress note (report)
+    const report = await prisma.progressNote.create({
+      data: {
+        childId,
+        therapistId,
+        title,
+        content: progressNotes,
+        date: sessionDate ? new Date(sessionDate) : new Date(),
+      },
+    });
+
+    return sendResponse(res, 201, "Report created successfully", report);
+  } catch (error) {
+    console.error("Create report error:", error);
+    return sendResponse(res, 500, "Failed to create report");
+  }
+};
+
+const updateReport = async (req, res) => {
+  try {
+    const therapistId = req.user.id;
+    const { id } = req.params;
+    const { title, status } = req.body;
+
+    // Check if report exists
+    const existingReport = await prisma.progressNote.findUnique({
+      where: { id },
+    });
+
+    if (!existingReport) {
+      return sendResponse(res, 404, "Report not found");
+    }
+
+    // Verify this report belongs to this therapist
+    if (existingReport.therapistId !== therapistId) {
+      return sendResponse(res, 403, "Not authorized to update this report");
+    }
+
+    // Build update data
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (status) updateData.status = status;
+    
+    // If publishing, ensure title doesn't have "Draft"
+    if (status === "SENT" && existingReport.title.includes("Draft")) {
+      updateData.title = existingReport.title.replace("Draft", "Laporan");
+    }
+
+    // Only update if there's data to update
+    if (Object.keys(updateData).length === 0) {
+      return sendResponse(res, 200, "No changes to update", existingReport);
+    }
+
+    // Update the report
+    const updatedReport = await prisma.progressNote.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return sendResponse(res, 200, "Report updated successfully", updatedReport);
+  } catch (error) {
+    console.error("Update report error:", error);
+    return sendResponse(res, 500, "Failed to update report");
+  }
+};
+
+// Get therapist availability for a specific date
+const getAvailability = async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return sendResponse(res, 400, "Date parameter is required");
+    }
+
+    const selectedDate = new Date(date);
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get all booked sessions for this date
+    const bookedSessions = await prisma.therapySession.findMany({
+      where: {
+        schedule: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        paymentStatus: "SUCCESS",
+      },
+      select: {
+        schedule: true,
+        therapyType: true,
+      },
+    });
+
+    // Define available time slots (9 AM to 5 PM, 1 hour slots)
+    const availableSlots = [];
+    for (let hour = 9; hour < 17; hour++) {
+      const slotStart = new Date(selectedDate);
+      slotStart.setHours(hour, 0, 0, 0);
+      const slotEnd = new Date(selectedDate);
+      slotEnd.setHours(hour + 1, 0, 0, 0);
+
+      // Check if this slot is booked
+      const isBooked = bookedSessions.some((session) => {
+        const sessionStart = new Date(session.schedule);
+        return sessionStart >= slotStart && sessionStart < slotEnd;
+      });
+
+      availableSlots.push({
+        time: `${hour.toString().padStart(2, "0")}:00`,
+        endTime: `${(hour + 1).toString().padStart(2, "0")}:00`,
+        isAvailable: !isBooked,
+      });
+    }
+
+    return sendResponse(res, 200, "Availability fetched", {
+      date: date,
+      slots: availableSlots,
+    });
+  } catch (error) {
+    console.error("Get availability error:", error);
+    return sendResponse(res, 500, "Failed to fetch availability");
+  }
+};
+
+// List all therapists for parent to book
+const listTherapists = async (req, res) => {
+  try {
+    const therapists = await prisma.user.findMany({
+      where: {
+        role: "THERAPIST",
+        isBlocked: false,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        _count: {
+          select: {
+            therapySessions: {
+              where: {
+                paymentStatus: "SUCCESS",
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    // Format response
+    const therapistList = therapists.map((therapist) => ({
+      id: therapist.id,
+      name: therapist.name,
+      email: therapist.email,
+      totalSessions: therapist._count.therapySessions,
+      rating: 4.5, // Mock rating for now
+      specialization: "Terapi Bicara & Wicara",
+    }));
+
+    return sendResponse(res, 200, "Therapists fetched", therapistList);
+  } catch (error) {
+    console.error("List therapists error:", error);
+    return sendResponse(res, 500, "Failed to fetch therapists");
+  }
+};
+
 module.exports = {
   getPatients,
   getPatientDetail,
   evaluatePatient,
   generateReport,
+  getReportHistory,
+  createReport,
+  updateReport,
+  getAvailability,
+  listTherapists,
 };

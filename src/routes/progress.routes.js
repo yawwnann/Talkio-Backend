@@ -19,4 +19,11 @@ router.post(
   progressController.uploadProgress,
 );
 
+router.get(
+  "/:childId",
+  authenticateToken,
+  authorizeRoles("PARENT"),
+  progressController.getProgressHistory,
+);
+
 module.exports = router;

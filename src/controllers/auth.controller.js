@@ -79,7 +79,20 @@ const login = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    // JWT is stateless, so logout is handled client-side by removing the token
+    // This endpoint is provided for API consistency
+    // In production, you could add token blacklisting here if needed
+    return sendResponse(res, 200, "Logout successful");
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   register,
   login,
+  logout,
 };

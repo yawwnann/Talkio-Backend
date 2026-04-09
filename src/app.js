@@ -24,10 +24,16 @@ const therapyRoutes = require("./routes/therapy.routes");
 const gameRoutes = require("./routes/game.routes");
 const progressRoutes = require("./routes/progress.routes");
 const therapistRoutes = require("./routes/therapist.routes");
+const therapistNotesRoutes = require("./routes/therapist-notes.routes");
+const therapistScheduleRoutes = require("./routes/therapist-schedule.routes");
+const therapistDashboardRoutes = require("./routes/therapist-dashboard.routes");
+const therapistPatientRoutes = require("./routes/therapist-patient.routes");
 const adminRoutes = require("./routes/admin.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const mlRoutes = require("./routes/ml.routes");
 const audioRoutes = require("./routes/audio.routes");
+const educationRoutes = require("./routes/education.routes");
+const parentRoutes = require("./routes/parent.routes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -37,12 +43,18 @@ app.use("/api/therapy", therapyRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/therapist", therapistRoutes);
+app.use("/api/therapist", therapistNotesRoutes);
+app.use("/api/therapist", therapistScheduleRoutes);
+app.use("/api/therapist", therapistDashboardRoutes);
+app.use("/api/therapist", therapistPatientRoutes);
 app.use("/api/admin", adminRoutes);
 
 // New routes
 app.use("/api/payment", paymentRoutes);
 app.use("/api/v1/predict", mlRoutes);
 app.use("/api/v1/audio", audioRoutes);
+app.use("/api/education", educationRoutes);
+app.use("/api/parent", parentRoutes);
 
 // Serve static files
 app.use("/uploads", express.static("uploads"));

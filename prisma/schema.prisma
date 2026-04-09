@@ -46,6 +46,7 @@ model User {
   children        Child[]
   therapySessions TherapySession[] @relation("TherapistSessions")
   educationContents EducationContent[]
+  progressNotes   ProgressNote[]
 
   @@map("users")
 }
@@ -63,6 +64,7 @@ model Child {
   therapySessions TherapySession[]
   gameLogs        GameLog[]
   progressUploads ProgressUpload[]
+  progressNotes   ProgressNote[]
 
   @@map("children")
 }
@@ -123,6 +125,22 @@ model ProgressUpload {
   @@map("progress_uploads")
 }
 
+model ProgressNote {
+  id          String   @id @default(uuid())
+  childId     String
+  child       Child    @relation(fields: [childId], references: [id])
+  therapistId String
+  therapist   User     @relation(fields: [therapistId], references: [id])
+  title       String
+  content     String   @db.Text
+  status      String   @default("DRAFT")
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("progress_notes")
+}
+
 model MlPrediction {
   id               String    @id @default(uuid())
   diagnosisId      String    @unique
@@ -137,14 +155,18 @@ model MlPrediction {
 }
 
 model EducationContent {
-  id        String   @id @default(uuid())
-  title     String
-  content   String   // Text or URL
-  type      String   // 'ARTICLE' or 'VIDEO'
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  description String?  // Deskripsi singkat konten
+  content     String   // Text untuk article, URL untuk video
+  type        String   // 'ARTICLE' atau 'VIDEO'
+  thumbnail   String?  // URL thumbnail untuk video
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  isActive    Boolean  @default(true)
+  order       Int      @default(0) // Urutan tampilan
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("education_contents")
 }

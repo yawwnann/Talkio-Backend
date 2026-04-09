@@ -31,6 +31,29 @@ const uploadProgress = async (req, res) => {
   }
 };
 
+const getProgressHistory = async (req, res) => {
+  try {
+    const { childId } = req.params;
+
+    // Verify child belongs to the parent
+    const child = await prisma.child.findUnique({ where: { id: childId } });
+    if (!child) return sendResponse(res, 404, "Child not found");
+    if (child.parentId !== req.user.id)
+      return sendResponse(res, 403, "Access denied");
+
+    const history = await prisma.progressUpload.findMany({
+      where: { childId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return sendResponse(res, 200, "Progress history fetched", history);
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   uploadProgress,
+  getProgressHistory,
 };
