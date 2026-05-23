@@ -78,7 +78,13 @@ app.get("/", (req, res) => {
 // Global error handler (must be last)
 app.use(globalErrorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-});
+// Export the app for use in serverless
+module.exports = app;
+
+// Only start the server if this file is run directly
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+  });
+}
