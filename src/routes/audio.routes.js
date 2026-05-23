@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
-const mlService = require("../services/ml.service");
 const audioService = require("../services/audio.service");
 const upload = require("../middlewares/upload.middleware");
 const { authenticateToken } = require("../middlewares/auth.middleware");
@@ -48,19 +47,21 @@ const uploadAudio = async (req, res) => {
       return sendResponse(res, 400, validation.error);
     }
 
-    // Send to ML service for analysis
-    const mlResult = await mlService.analyzeVoice(file.path, child_id);
+    // Hapus pemanggilan ke mlService.analyzeVoice
 
-    return sendResponse(res, 200, "Audio uploaded and analyzed", {
+    // Menyimpan rekam medis/log audio (tanpa ML)
+    // Di sini kita bisa simpan ke database jika perlu, atau sekadar membalas sukses
+    
+    return sendResponse(res, 200, "Audio file uploaded successfully (ML analysis disabled)", {
       child_id,
       file_info: {
         name: file.originalname,
         size: validation.metadata.fileSizeMB + "MB",
         type: validation.metadata.mimeType,
       },
-      analysis: mlResult.success ? mlResult.analysis : null,
-      recommendations: mlResult.success ? mlResult.recommendations : [],
-      ml_service_available: mlResult.success,
+      analysis: null,
+      recommendations: [],
+      ml_service_available: false,
     });
   } catch (error) {
     console.error("Audio upload error:", error);

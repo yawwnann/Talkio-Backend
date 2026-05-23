@@ -17,9 +17,6 @@ const generatePatientReport = async (childId) => {
         select: { name: true, email: true },
       },
       diagnoses: {
-        include: {
-          mlPrediction: true,
-        },
         orderBy: { createdAt: "desc" },
       },
       therapySessions: {
@@ -93,11 +90,10 @@ const generatePatientReport = async (childId) => {
       doc.text(`Tanggal: ${new Date(diagnosis.createdAt).toLocaleDateString("id-ID")}`);
       doc.text(`Level Risiko: ${diagnosis.riskLevel}`);
       doc.text(`Skor: ${diagnosis.score}`);
-      doc.text(`Rekomendasi: ${diagnosis.recommendation || "-"}`);
-      
-      if (diagnosis.mlPrediction) {
-        doc.text(`Model ML: ${diagnosis.mlPrediction.modelVersion}`);
-        doc.text(`Hasil Prediksi: ${diagnosis.mlPrediction.predictionResult}`);
+      if (diagnosis.recommendation) {
+        doc.text(`Rekomendasi: ${diagnosis.recommendation}`);
+      } else {
+        doc.text(`Rekomendasi: -`);
       }
       
       doc.moveDown(0.5);

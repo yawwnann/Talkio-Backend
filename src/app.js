@@ -37,7 +37,6 @@ const progressRoutes = require("./routes/progress.routes");
 const therapistRoutes = require("./routes/therapist");
 const adminRoutes = require("./routes/admin.routes");
 const paymentRoutes = require("./routes/payment.routes");
-const mlRoutes = require("./routes/ml.routes");
 const audioRoutes = require("./routes/audio.routes");
 const educationRoutes = require("./routes/education.routes");
 const parentRoutes = require("./routes/parent.routes");
@@ -53,7 +52,6 @@ app.use("/api/therapist", therapistRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use("/api/payment", paymentRoutes);
-app.use("/api/v1/predict", mlRoutes);
 app.use("/api/v1/audio", audioRoutes);
 app.use("/api/education", educationRoutes);
 app.use("/api/parent", parentRoutes);

@@ -78,7 +78,7 @@ model Diagnosis {
   score         Float
   recommendation String?
   createdAt     DateTime       @default(now())
-  mlPrediction  MlPrediction?
+
 
   @@map("diagnoses")
 }
@@ -141,18 +141,7 @@ model ProgressNote {
   @@map("progress_notes")
 }
 
-model MlPrediction {
-  id               String    @id @default(uuid())
-  diagnosisId      String    @unique
-  diagnosis        Diagnosis @relation(fields: [diagnosisId], references: [id])
-  inputData        Json
-  modelVersion     String
-  predictionResult Float
-  actualLabel      String?
-  createdAt        DateTime  @default(now())
 
-  @@map("ml_predictions")
-}
 
 model EducationContent {
   id          String   @id @default(uuid())
