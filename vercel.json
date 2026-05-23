@@ -14,8 +14,8 @@
     }
   ],
   "env": {
-    "DATABASE_URL": "@database_url",
-    "DB_HOST": "@db_host",
+  "DATABASE_URL": "mysql://2jBubeWzXdJZrrh.root:zFbEQcPf6Cr3X3N0@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/Talkio?sslaccept=strict",
+  "DB_HOST": "@db_host",
     "DB_PORT": "@db_port",
     "DB_USERNAME": "@db_username",
     "DB_PASSWORD": "@db_password",
