@@ -304,15 +304,15 @@ const getAvailability = async (req, res) => {
     // Define available time slots (9 AM to 5 PM, 1 hour slots)
     const availableSlots = [];
     for (let hour = 9; hour < 17; hour++) {
-      const slotStart = new Date(selectedDate);
-      slotStart.setHours(hour, 0, 0, 0);
-      const slotEnd = new Date(selectedDate);
-      slotEnd.setHours(hour + 1, 0, 0, 0);
-
       // Check if this slot is booked
       const isBooked = bookedSessions.some((session) => {
         const sessionStart = new Date(session.schedule);
-        return sessionStart >= slotStart && sessionStart < slotEnd;
+        // Get the hour in WIB (UTC+7)
+        let wibHour = sessionStart.getUTCHours() + 7;
+        if (wibHour >= 24) {
+          wibHour -= 24;
+        }
+        return wibHour === hour;
       });
 
       availableSlots.push({
