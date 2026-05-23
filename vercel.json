@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/src/app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "backend/src/app.js"
+    }
+  ],
+  "env": {
+    "DB_HOST": "@db_host",
+    "DB_PORT": "@db_port",
+    "DB_USERNAME": "@db_username",
+    "DB_PASSWORD": "@db_password",
+    "DB_DATABASE": "@db_database",
+    "JWT_SECRET": "@jwt_secret",
+    "PORT": "80",
+    "NODE_ENV": "production",
+    "ML_SERVICE_URL": "@ml_service_url",
+    "ML_API_TIMEOUT": "@ml_api_timeout",
+    "ML_MODEL_VERSION": "@ml_model_version",
+    "MIDTRANS_SERVER_KEY": "@midtrans_server_key",
+    "MIDTRANS_CLIENT_KEY": "@midtrans_client_key",
+    "MIDTRANS_IS_PRODUCTION": "@midtrans_is_production",
+    "FRONTEND_URL": "@frontend_url"
+  }
+}
