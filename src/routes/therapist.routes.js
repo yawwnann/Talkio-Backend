@@ -7,43 +7,43 @@ const {
 } = require("../middlewares/auth.middleware");
 
 router.get(
-  "patients",
+  "/patients",
   authenticateToken,
   authorizeRoles("THERAPIST"),
   therapistController.getPatients,
 );
 router.get(
-  "patient/:id",
+  "/patient/:id",
   authenticateToken,
   authorizeRoles("THERAPIST"),
   therapistController.getPatientDetail,
 );
 router.patch(
-  "evaluate",
+  "/evaluate",
   authenticateToken,
   authorizeRoles("THERAPIST"),
   therapistController.evaluatePatient,
 );
 router.get(
-  "report/:id",
+  "/report/:id",
   authenticateToken,
   authorizeRoles("THERAPIST"),
   therapistController.generateReport,
 );
 router.get(
-  "reports",
+  "/reports",
   authenticateToken,
   authorizeRoles("THERAPIST"),
   therapistController.getReportHistory,
 );
 router.post(
-  "report",
+  "/report",
   authenticateToken,
   authorizeRoles("THERAPIST"),
   therapistController.createReport,
 );
 router.patch(
-  "report/:id",
+  "/report/:id",
   authenticateToken,
   authorizeRoles("THERAPIST"),
   therapistController.updateReport,
@@ -51,7 +51,7 @@ router.patch(
 
 // Get therapist accessibility (accessible by parent)
 router.get(
-  "availability",
+  "/availability",
   authenticateToken,
   authorizeRoles("PARENT", "THERAPIST"),
   therapistController.getAvailability,
@@ -59,7 +59,7 @@ router.get(
 
 // List all therapists (accessible by parent)
 router.get(
-  "list",
+  "/list",
   authenticateToken,
   authorizeRoles("PARENT"),
   therapistController.listTherapists,
