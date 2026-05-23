@@ -5,6 +5,7 @@ const {
   authenticateToken,
   authorizeRoles,
 } = require("../middlewares/auth.middleware");
+const upload = require("../middlewares/upload.middleware");
 
 router.get(
   "/dashboard",
@@ -41,6 +42,13 @@ router.delete(
   authenticateToken,
   authorizeRoles("ADMIN"),
   adminController.deleteAsset,
+);
+router.post(
+  "/assets/upload",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  upload.single("file"),
+  adminController.uploadAsset,
 );
 
 module.exports = router;

@@ -267,6 +267,28 @@ const deleteAsset = async (req, res) => {
   }
 };
 
+const uploadAsset = async (req, res) => {
+  try {
+    if (!req.file) {
+      return sendResponse(res, 400, "No file uploaded");
+    }
+
+    const { filename, size, mimetype } = req.file;
+    const fileStat = await fs.stat(req.file.path);
+
+    return sendResponse(res, 201, "Asset uploaded successfully", {
+      filename,
+      url: `/uploads/${filename}`,
+      size,
+      mimeType: mimetype.split('/').pop(),
+      createdAt: fileStat.birthtime,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   getDashboardStats,
   manageUser,
@@ -274,4 +296,5 @@ module.exports = {
   getAllUsers,
   getAllAssets,
   deleteAsset,
+  uploadAsset,
 };

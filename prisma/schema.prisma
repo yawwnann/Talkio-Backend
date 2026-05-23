@@ -160,3 +160,18 @@ model EducationContent {
 
   @@map("education_contents")
 }
+
+model Asset {
+  id          String   @id @default(uuid())
+  kode        String   @unique   // Kode unik aset, misal AST-001
+  nama        String             // Nama barang/aset
+  kategori    String?            // Kategori aset
+  jumlah      Int      @default(0)
+  satuan      String?            // Pcs, Unit, Set, dll
+  keterangan  String?
+  kondisi     String   @default("BAIK") // BAIK, RUSAK, TIDAK_ADA
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("assets")
+}

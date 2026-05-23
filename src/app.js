@@ -35,6 +35,7 @@ const therapyRoutes = require("./routes/therapy.routes");
 const gameRoutes = require("./routes/game.routes");
 const progressRoutes = require("./routes/progress.routes");
 const therapistRoutes = require("./routes/therapist");
+const assetRoutes = require("./routes/asset.routes");
 const adminRoutes = require("./routes/admin.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const audioRoutes = require("./routes/audio.routes");
@@ -50,6 +51,7 @@ app.use("/api/game", gameRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/therapist", therapistRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/assets", assetRoutes);
 
 app.use("/api/payment", paymentRoutes);
 app.use("/api/v1/audio", audioRoutes);
