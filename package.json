@@ -10,7 +10,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:verbose": "jest --verbose"
+    "test:verbose": "jest --verbose",
+    "build": "prisma generate --schema prisma/schema.prisma",
+    "prepare": "prisma generate --schema prisma/schema.prisma"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
