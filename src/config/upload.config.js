@@ -1,7 +1,8 @@
 const path = require("path");
+const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
 module.exports = {
-  UPLOAD_DIR: path.join(__dirname, "..", "..", "uploads"),
+  UPLOAD_DIR: isVercel ? path.join("/tmp", "uploads") : path.join(__dirname, "..", "..", "uploads"),
   MAX_PHOTO_SIZE: parseInt(process.env.MAX_PHOTO_SIZE_MB) || 10,
   MAX_VIDEO_SIZE: parseInt(process.env.MAX_VIDEO_SIZE_MB) || 50,
   MAX_AUDIO_SIZE: 20, // MB

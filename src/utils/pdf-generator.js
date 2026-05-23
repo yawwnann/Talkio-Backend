@@ -48,7 +48,10 @@ const generatePatientReport = async (childId) => {
   // Create PDF document
   const doc = new PDFDocument({ margin: 50 });
   const fileName = `report-${childId}-${Date.now()}.pdf`;
-  const filePath = path.join(__dirname, "..", "..", "uploads", "reports", fileName);
+  const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+  const filePath = isVercel 
+    ? path.join("/tmp", "uploads", "reports", fileName)
+    : path.join(__dirname, "..", "..", "uploads", "reports", fileName);
 
   // Ensure reports directory exists
   const reportsDir = path.dirname(filePath);
