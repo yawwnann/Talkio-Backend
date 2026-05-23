@@ -136,6 +136,17 @@ const getSchedule = async (req, res) => {
       where.childId = childId;
     }
 
+    // Auto-update past sessions to inactive (completed)
+    await prisma.therapySession.updateMany({
+      where: {
+        isActive: true,
+        schedule: { lt: new Date() },
+      },
+      data: {
+        isActive: false,
+      },
+    });
+
     // Filter by status if provided
     if (status && status !== "all") {
       if (status === "active") {

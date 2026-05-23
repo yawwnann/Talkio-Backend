@@ -7,6 +7,17 @@ const getSchedule = async (req, res) => {
     const therapistId = req.user.id;
     const { startDate, endDate } = req.query;
 
+    // Auto-update past sessions to inactive (completed)
+    await prisma.therapySession.updateMany({
+      where: {
+        isActive: true,
+        schedule: { lt: new Date() },
+      },
+      data: {
+        isActive: false,
+      },
+    });
+
     // Build date filter
     const whereClause = {
       therapistId,
