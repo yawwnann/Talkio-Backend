@@ -268,7 +268,7 @@ const updateReport = async (req, res) => {
 // Get therapist availability for a specific date
 const getAvailability = async (req, res) => {
   try {
-    const { date } = req.query;
+    const { date, therapistId } = req.query;
 
     if (!date) {
       return sendResponse(res, 400, "Date parameter is required");
@@ -280,15 +280,21 @@ const getAvailability = async (req, res) => {
     const endOfDay = new Date(selectedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
+    const whereClause = {
+      schedule: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      paymentStatus: "SUCCESS",
+    };
+
+    if (therapistId) {
+      whereClause.therapistId = therapistId;
+    }
+
     // Get all booked sessions for this date
     const bookedSessions = await prisma.therapySession.findMany({
-      where: {
-        schedule: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-        paymentStatus: "SUCCESS",
-      },
+      where: whereClause,
       select: {
         schedule: true,
         therapyType: true,
