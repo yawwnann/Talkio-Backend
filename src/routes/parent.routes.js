@@ -38,12 +38,6 @@ router.get(
   parentController.getPayments,
 );
 
-// Book a therapy session
-router.post(
-  "/book",
-  authenticateToken,
-  authorizeRoles("PARENT"),
-  parentController.bookSession,
-);
+
 
 module.exports = router;
