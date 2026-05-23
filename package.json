@@ -11,7 +11,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:verbose": "jest --verbose",
-    "build": "PRISMA_QUERY_ENGINE_BINARY=libquery_engine-linux-musl.so.node prisma generate --schema prisma/schema.prisma"
+    "build": "prisma generate --schema prisma/schema.prisma"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
