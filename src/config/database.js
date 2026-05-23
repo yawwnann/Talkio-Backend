@@ -1,13 +1,6 @@
-require("dotenv").config({ override: true });
-
-// Prefer DATABASE_URL if set directly
-let DATABASE_URL = process.env.DATABASE_URL;
-
-if (!DATABASE_URL && process.env.DB_HOST && process.env.DB_USERNAME) {
-  DATABASE_URL =
-    process.env.DB_PASSWORD != null
-      ? `mysql://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 3306}/${process.env.DB_DATABASE}?sslaccept=strict`
-      : `mysql://${process.env.DB_USERNAME}@${process.env.DB_HOST}:${process.env.DB_PORT || 3306}/${process.env.DB_DATABASE}?sslaccept=strict`;
-}
+// In production (Vercel) all env vars are injected by the platform.
+// DATABASE_URL is the single source of truth — never construct it from DB_* vars
+// in production to avoid leaking credentials in logs.
+const DATABASE_URL = process.env.DATABASE_URL;
 
 module.exports = { DATABASE_URL };

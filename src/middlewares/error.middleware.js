@@ -9,7 +9,19 @@ class AppError extends Error {
   }
 }
 
-const handlePrismaError = (error) => {
+// ── Prevent Express 5 json/urlencoded middleware crashes from killing the function ──
+// These two middlewares wrap every incoming request so that even if the body
+// parser throws (malformed JSON, oversized body, etc.) the error is forwarded
+// to the next(error) chain instead of crashing the whole function.
+const jsonErrorWrapper = (err, req, res, next) => {
+  if (err) {
+    console.error("[json-middleware-error]", err.message);
+    return res.status(400).json({ status: "error", message: "Invalid request body" });
+  }
+  next();
+};
+
+const prismaErrorHandler = (error) => {
   if (error.code === "P2002") {
     return {
       statusCode: 409,
@@ -44,14 +56,14 @@ const handleValidationError = () => ({
 });
 
 const sendErrorDev = (err, req, res) => {
-  console.error("❌ ERROR:", err);
+  // Do NOT log full body/env in production — just the error code/message
+  console.error(err);
 
   if (req.originalUrl.startsWith("/api")) {
     return res.status(err.statusCode).json({
       status: err.status,
       message: err.message,
-      stack: err.stack,
-      error: err,
+      ...(err.code ? { code: err.code } : {}),
     });
   }
 };
@@ -64,7 +76,13 @@ const sendErrorProd = (err, res) => {
     });
   }
 
-  console.error("❌ ERROR:", err);
+  // Unexpected / unhandled error — log code + message, no stack in response
+  console.error(
+    "[unhandled-error]",
+    err.name,
+    err.code || "",
+    err.message || "",
+  );
   return res.status(500).json({
     status: "error",
     message: "Something went wrong!",
@@ -77,39 +95,40 @@ const globalErrorHandler = (err, req, res, next) => {
 
   if (process.env.NODE_ENV === "development") {
     sendErrorDev(err, req, res);
-  } else {
-    let error = { ...err };
-    error.message = err.message;
-
-    if (error.code === "P2002" || error.code === "P2025") {
-      const prismaError = handlePrismaError(error);
-      err.statusCode = prismaError.statusCode;
-      err.message = prismaError.message;
-    }
-
-    if (err.name === "JsonWebTokenError") {
-      const jwtError = handleJWTError();
-      err.statusCode = jwtError.statusCode;
-      err.message = jwtError.message;
-    }
-
-    if (err.name === "TokenExpiredError") {
-      const expiredError = handleJWTExpiredError();
-      err.statusCode = expiredError.statusCode;
-      err.message = expiredError.message;
-    }
-
-    if (err.name === "ValidationError") {
-      const validationError = handleValidationError();
-      err.statusCode = validationError.statusCode;
-      err.message = validationError.message;
-    }
-
-    sendErrorProd(err, res);
+    return;
   }
+
+  const error = { ...err };
+
+  if (error.code === "P2002" || error.code === "P2025") {
+    const prismaError = prismaErrorHandler(error);
+    err.statusCode = prismaError.statusCode;
+    err.message = prismaError.message;
+  }
+
+  if (err.name === "JsonWebTokenError") {
+    const jwtError = handleJWTError();
+    err.statusCode = jwtError.statusCode;
+    err.message = jwtError.message;
+  }
+
+  if (err.name === "TokenExpiredError") {
+    const expiredError = handleJWTExpiredError();
+    err.statusCode = expiredError.statusCode;
+    err.message = expiredError.message;
+  }
+
+  if (err.name === "ValidationError") {
+    const validationError = handleValidationError();
+    err.statusCode = validationError.statusCode;
+    err.message = validationError.message;
+  }
+
+  sendErrorProd(err, res);
 };
 
 module.exports = {
   AppError,
   globalErrorHandler,
+  jsonErrorWrapper,
 };
