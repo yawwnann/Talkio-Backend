@@ -57,6 +57,14 @@ router.get(
   therapistController.getAvailability,
 );
 
+// Complete schedule (Therapist)
+router.put(
+  "/schedule/:id/complete",
+  authenticateToken,
+  authorizeRoles("THERAPIST"),
+  require("../controllers/therapist-schedule.controller").completeSchedule,
+);
+
 // List all therapists (accessible by parent)
 router.get(
   "/list",

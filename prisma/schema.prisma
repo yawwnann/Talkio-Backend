@@ -93,6 +93,7 @@ model TherapySession {
   paymentStatus PaymentStatus @default(PENDING)
   therapyType   String
   isActive      Boolean       @default(false)
+  sessionStatus String        @default("SCHEDULED")
   transactionId String?
   paymentUrl    String?
   createdAt     DateTime      @default(now())

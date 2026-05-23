@@ -30,5 +30,17 @@ router.post(
   authorizeRoles("ADMIN"),
   adminController.addEducationContent,
 );
+router.get(
+  "/assets",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  adminController.getAllAssets,
+);
+router.delete(
+  "/assets/:filename",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  adminController.deleteAsset,
+);
 
 module.exports = router;

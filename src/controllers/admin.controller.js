@@ -1,5 +1,7 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
+const fs = require("fs").promises;
+const path = require("path");
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -196,9 +198,80 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const getAllAssets = async (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, "../../uploads");
+    
+    try {
+      await fs.access(uploadsDir);
+    } catch (err) {
+      // Directory doesn't exist yet
+      return sendResponse(res, 200, "Assets fetched", []);
+    }
+
+    const files = await fs.readdir(uploadsDir);
+    const assets = [];
+
+    for (const file of files) {
+      const filePath = path.join(uploadsDir, file);
+      const stats = await fs.stat(filePath);
+      
+      if (stats.isFile()) {
+        assets.push({
+          filename: file,
+          url: `/uploads/${file}`,
+          size: stats.size, // in bytes
+          createdAt: stats.birthtime,
+          mimeType: file.split('.').pop() // basic extension detection
+        });
+      }
+    }
+
+    // Sort newest first
+    assets.sort((a, b) => b.createdAt - a.createdAt);
+
+    return sendResponse(res, 200, "Assets fetched", assets);
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
+const deleteAsset = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    if (!filename) {
+      return sendResponse(res, 400, "Filename is required");
+    }
+
+    // Prevent directory traversal attacks
+    const normalizedFilename = path.basename(filename);
+    const filePath = path.join(__dirname, "../../uploads", normalizedFilename);
+
+    try {
+      await fs.access(filePath);
+    } catch (err) {
+      return sendResponse(res, 404, "Asset not found");
+    }
+
+    await fs.unlink(filePath);
+
+    // Also try to find if it's referenced in ProgressUpload or EducationContent and update if necessary,
+    // though just deleting the file is the primary goal for freeing up space.
+    // For now, simple file deletion.
+
+    return sendResponse(res, 200, "Asset deleted successfully");
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   getDashboardStats,
   manageUser,
   addEducationContent,
   getAllUsers,
+  getAllAssets,
+  deleteAsset,
 };
