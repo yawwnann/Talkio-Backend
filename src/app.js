@@ -5,6 +5,21 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const { globalErrorHandler } = require("./middlewares/error.middleware");
 
+// Validate required environment variables
+const requiredEnvVars = [
+  "DB_HOST",
+  "DB_USERNAME", 
+  "DB_PASSWORD",
+  "DB_DATABASE",
+  "JWT_SECRET"
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+  console.error("❌ Missing required environment variables:", missingEnvVars.join(", "));
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -23,11 +38,7 @@ const diagnosisRoutes = require("./routes/diagnosis.routes");
 const therapyRoutes = require("./routes/therapy.routes");
 const gameRoutes = require("./routes/game.routes");
 const progressRoutes = require("./routes/progress.routes");
-const therapistRoutes = require("./routes/therapist.routes");
-const therapistNotesRoutes = require("./routes/therapist-notes.routes");
-const therapistScheduleRoutes = require("./routes/therapist-schedule.routes");
-const therapistDashboardRoutes = require("./routes/therapist-dashboard.routes");
-const therapistPatientRoutes = require("./routes/therapist-patient.routes");
+const therapistRoutes = require("./routes/therapist");
 const adminRoutes = require("./routes/admin.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const mlRoutes = require("./routes/ml.routes");
@@ -43,10 +54,6 @@ app.use("/api/therapy", therapyRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/therapist", therapistRoutes);
-app.use("/api/therapist", therapistNotesRoutes);
-app.use("/api/therapist", therapistScheduleRoutes);
-app.use("/api/therapist", therapistDashboardRoutes);
-app.use("/api/therapist", therapistPatientRoutes);
 app.use("/api/admin", adminRoutes);
 
 // New routes
