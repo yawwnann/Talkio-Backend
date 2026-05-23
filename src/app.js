@@ -5,21 +5,6 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const { globalErrorHandler } = require("./middlewares/error.middleware");
 
-// Validate required environment variables
-const requiredEnvVars = [
-  "DB_HOST",
-  "DB_USERNAME", 
-  "DB_PASSWORD",
-  "DB_DATABASE",
-  "JWT_SECRET"
-];
-
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-if (missingEnvVars.length > 0) {
-  console.error("❌ Missing required environment variables:", missingEnvVars.join(", "));
-  process.exit(1);
-}
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
