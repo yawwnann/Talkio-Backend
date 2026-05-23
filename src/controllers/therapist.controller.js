@@ -347,6 +347,11 @@ const listTherapists = async (req, res) => {
             },
           },
         },
+        therapistReviews: {
+          select: {
+            rating: true,
+          },
+        },
       },
       orderBy: {
         name: "asc",
@@ -354,19 +359,179 @@ const listTherapists = async (req, res) => {
     });
 
     // Format response
-    const therapistList = therapists.map((therapist) => ({
-      id: therapist.id,
-      name: therapist.name,
-      email: therapist.email,
-      totalSessions: therapist._count.therapySessions,
-      rating: 4.5, // Mock rating for now
-      specialization: "Terapi Bicara & Wicara",
-    }));
+    const therapistList = therapists.map((therapist) => {
+      const reviews = therapist.therapistReviews || [];
+      const averageRating = reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 4.5; // fallback rating if no reviews yet
+      return {
+        id: therapist.id,
+        name: therapist.name,
+        email: therapist.email,
+        totalSessions: therapist._count.therapySessions,
+        rating: parseFloat(averageRating.toFixed(1)),
+        specialization: "Terapi Bicara & Wicara",
+      };
+    });
 
     return sendResponse(res, 200, "Therapists fetched", therapistList);
   } catch (error) {
     console.error("List therapists error:", error);
     return sendResponse(res, 500, "Failed to fetch therapists");
+  }
+};
+
+// Get detailed therapist profile and reviews (accessible by parent)
+const getTherapistDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const therapist = await prisma.user.findFirst({
+      where: {
+        id,
+        role: "THERAPIST",
+        isBlocked: false,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        _count: {
+          select: {
+            therapySessions: {
+              where: {
+                paymentStatus: "SUCCESS",
+              },
+            },
+          },
+        },
+        therapistReviews: {
+          include: {
+            parent: {
+              select: {
+                name: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+    });
+
+    if (!therapist) {
+      return sendResponse(res, 404, "Therapist not found");
+    }
+
+    const reviews = therapist.therapistReviews || [];
+    const averageRating = reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 4.5;
+
+    const formattedReviews = reviews.map((review) => ({
+      id: review.id,
+      parentId: review.parentId,
+      parentName: review.parent?.name || "Orang Tua",
+      rating: review.rating,
+      developmentTime: review.developmentTime,
+      comment: review.comment,
+      createdAt: review.createdAt,
+    }));
+
+    const therapistDetail = {
+      id: therapist.id,
+      name: therapist.name,
+      email: therapist.email,
+      totalSessions: therapist._count.therapySessions,
+      rating: parseFloat(averageRating.toFixed(1)),
+      specialization: "Terapi Bicara & Wicara",
+      experience: "5+ Tahun", // Mock experience
+      bio: `Dr. ${therapist.name} adalah terapis bicara profesional yang berdedikasi untuk membantu anak-anak mengatasi keterlambatan bicara. Dengan pengalaman di berbagai klinik tumbuh kembang anak, beliau merancang sesi terapi yang interaktif dan menyenangkan agar anak berkembang secara optimal.`,
+      reviews: formattedReviews,
+    };
+
+    return sendResponse(res, 200, "Therapist detail fetched successfully", therapistDetail);
+  } catch (error) {
+    console.error("Get therapist detail error:", error);
+    return sendResponse(res, 500, "Failed to fetch therapist detail");
+  }
+};
+
+// Create a review/testimonial for a therapist (accessible by parent)
+const createTherapistReview = async (req, res) => {
+  try {
+    const parentId = req.user.id;
+    const { therapistId, rating, developmentTime, comment } = req.body;
+
+    if (!therapistId || rating === undefined || !developmentTime || !comment) {
+      return sendResponse(res, 400, "All fields (therapistId, rating, developmentTime, comment) are required");
+    }
+
+    // Verify therapist exists
+    const therapist = await prisma.user.findFirst({
+      where: {
+        id: therapistId,
+        role: "THERAPIST",
+        isBlocked: false,
+      },
+    });
+
+    if (!therapist) {
+      return sendResponse(res, 404, "Therapist not found");
+    }
+
+    // Verify if parent has completed sessions with this therapist (at least 1 payment successful)
+    const sessionCount = await prisma.therapySession.count({
+      where: {
+        therapistId,
+        child: {
+          parentId: parentId,
+        },
+        paymentStatus: "SUCCESS",
+      },
+    });
+
+    if (sessionCount === 0) {
+      return sendResponse(res, 403, "Anda harus melakukan minimal 1 sesi terapi sukses dengan terapis ini untuk memberikan ulasan.");
+    }
+
+    // Check if review already exists from this parent for this therapist
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        parentId,
+        therapistId,
+      },
+    });
+
+    let review;
+    if (existingReview) {
+      // Update review
+      review = await prisma.review.update({
+        where: { id: existingReview.id },
+        data: {
+          rating: parseInt(rating),
+          developmentTime,
+          comment,
+        },
+      });
+    } else {
+      // Create new review
+      review = await prisma.review.create({
+        data: {
+          parentId,
+          therapistId,
+          rating: parseInt(rating),
+          developmentTime,
+          comment,
+        },
+      });
+    }
+
+    return sendResponse(res, 201, "Ulasan berhasil disimpan", review);
+  } catch (error) {
+    console.error("Create review error:", error);
+    return sendResponse(res, 500, "Failed to submit review");
   }
 };
 
@@ -380,4 +545,6 @@ module.exports = {
   updateReport,
   getAvailability,
   listTherapists,
+  getTherapistDetail,
+  createTherapistReview,
 };

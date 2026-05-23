@@ -73,4 +73,20 @@ router.get(
   therapistController.listTherapists,
 );
 
+// Get therapist detail (accessible by parent)
+router.get(
+  "/detail/:id",
+  authenticateToken,
+  authorizeRoles("PARENT"),
+  therapistController.getTherapistDetail,
+);
+
+// Submit therapist review (accessible by parent)
+router.post(
+  "/review",
+  authenticateToken,
+  authorizeRoles("PARENT"),
+  therapistController.createTherapistReview,
+);
+
 module.exports = router;
