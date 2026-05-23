@@ -5,13 +5,22 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const { globalErrorHandler } = require("./middlewares/error.middleware");
 
+// WARNING: Any console.log / console.error at TOP LEVEL of a module
+// that is required during startup will appear in the HTTP response
+// if Prisma or any other module crashes before the server is ready.
+// Keep this block lean and silent.
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(cors());
 app.use(helmet());
-app.use(morgan("dev"));
+
+// Use short format in production to reduce noise in response body on crash
+const morganFormat = process.env.NODE_ENV === "production" ? "short" : "dev";
+app.use(morgan(morganFormat));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -1,10 +1,15 @@
-require("dotenv").config({ override: true });
 const { PrismaClient } = require("@prisma/client");
-const { DATABASE_URL } = require("../config/database");
 
-// Set DATABASE_URL for Prisma
-process.env.DATABASE_URL = DATABASE_URL;
+// DATABASE_URL is set as a Vercel environment variable in vercel.json.
+// Prisma reads it via schema env("DATABASE_URL") at build/generate time.
+const DATABASE_URL = process.env.DATABASE_URL;
 
-const prisma = new PrismaClient();
+if (!DATABASE_URL) {
+  console.error("DATABASE_URL is not set — database operations will fail.");
+}
+
+const prisma = new PrismaClient({
+  // log: process.env.NODE_ENV === "development" ? ["query", "info", "warn", "error"] : ["error"],
+});
 
 module.exports = prisma;

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "npx prisma generate --schema prisma/schema.prisma && npm install",
+  "installCommand": "npm install && npx prisma generate --schema prisma/schema.prisma",
   "builds": [
     {
       "src": "backend/src/app.js",
@@ -18,5 +18,5 @@
   "JWT_SECRET": "mysupersecretkey123!@#",
   "NODE_ENV": "production",
   "PORT": "80"
-  }
+}
 }

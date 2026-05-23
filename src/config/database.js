@@ -1,7 +1,6 @@
 require("dotenv").config({ override: true });
 
-// Prefer DATABASE_URL if set directly — this is the correct path on Vercel.
-// Falls back to constructing from individual TiDB env variables.
+// Prefer DATABASE_URL if set directly
 let DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL && process.env.DB_HOST && process.env.DB_USERNAME) {
