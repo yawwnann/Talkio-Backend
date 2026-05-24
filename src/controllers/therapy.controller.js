@@ -1,6 +1,7 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { initializeMidtrans, THERAPY_PRICE } = require("../config/midtrans.config");
+const { isWithinWorkingHoursWib } = require("../config/working-hours.config");
 
 const createSession = async (req, res) => {
   try {
@@ -31,12 +32,21 @@ const createSession = async (req, res) => {
       }
     }
 
+    const scheduleDate = new Date(schedule);
+    if (Number.isNaN(scheduleDate.getTime())) {
+      return sendResponse(res, 400, "Invalid schedule date");
+    }
+
+    if (!isWithinWorkingHoursWib(scheduleDate)) {
+      return sendResponse(res, 400, "Schedule must be within working hours (14:00-21:00 WIB)");
+    }
+
     // Create session (PENDING)
     const session = await prisma.therapySession.create({
       data: {
         childId,
         therapistId,
-        schedule: new Date(schedule),
+        schedule: scheduleDate,
         therapyType,
         paymentStatus: "PENDING",
       },

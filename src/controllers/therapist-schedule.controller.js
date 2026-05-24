@@ -1,5 +1,6 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
+const { isWithinWorkingHoursWib } = require("../config/working-hours.config");
 
 // Get therapist schedule for a specific date or date range
 const getSchedule = async (req, res) => {
@@ -103,6 +104,14 @@ const createSchedule = async (req, res) => {
 
     // Check for scheduling conflicts
     const scheduleDate = new Date(schedule);
+    if (Number.isNaN(scheduleDate.getTime())) {
+      return sendResponse(res, 400, "Invalid schedule date");
+    }
+
+    if (!isWithinWorkingHoursWib(scheduleDate)) {
+      return sendResponse(res, 400, "Schedule must be within working hours (14:00-21:00 WIB)");
+    }
+
     const oneHourLater = new Date(scheduleDate.getTime() + 60 * 60 * 1000);
 
     const conflict = await prisma.therapySession.findFirst({
@@ -165,11 +174,23 @@ const updateSchedule = async (req, res) => {
       return sendResponse(res, 403, "Not authorized to update this session");
     }
 
+    let scheduleDate;
+    if (schedule) {
+      scheduleDate = new Date(schedule);
+      if (Number.isNaN(scheduleDate.getTime())) {
+        return sendResponse(res, 400, "Invalid schedule date");
+      }
+
+      if (!isWithinWorkingHoursWib(scheduleDate)) {
+        return sendResponse(res, 400, "Schedule must be within working hours (14:00-21:00 WIB)");
+      }
+    }
+
     // Update the session
     const updatedSession = await prisma.therapySession.update({
       where: { id },
       data: {
-        ...(schedule && { schedule: new Date(schedule) }),
+        ...(scheduleDate && { schedule: scheduleDate }),
         ...(therapyType && { therapyType }),
         ...(isActive !== undefined && { isActive }),
       },

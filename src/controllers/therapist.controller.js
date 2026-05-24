@@ -2,6 +2,11 @@ const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { generatePatientReport } = require("../utils/pdf-generator");
 const fs = require("fs");
+const {
+  WORK_START_HOUR_WIB,
+  WORK_END_HOUR_WIB,
+  getWibHour,
+} = require("../config/working-hours.config");
 
 // Get patients scheduled with this therapist
 const getPatients = async (req, res) => {
@@ -301,18 +306,13 @@ const getAvailability = async (req, res) => {
       },
     });
 
-    // Define available time slots (9 AM to 5 PM, 1 hour slots)
+    // Define available time slots (14:00 to 21:00 WIB, 1 hour slots)
     const availableSlots = [];
-    for (let hour = 9; hour < 17; hour++) {
+    for (let hour = WORK_START_HOUR_WIB; hour < WORK_END_HOUR_WIB; hour++) {
       // Check if this slot is booked
       const isBooked = bookedSessions.some((session) => {
         const sessionStart = new Date(session.schedule);
-        // Get the hour in WIB (UTC+7)
-        let wibHour = sessionStart.getUTCHours() + 7;
-        if (wibHour >= 24) {
-          wibHour -= 24;
-        }
-        return wibHour === hour;
+        return getWibHour(sessionStart) === hour;
       });
 
       availableSlots.push({
