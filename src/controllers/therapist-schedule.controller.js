@@ -1,6 +1,10 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { isWithinWorkingHoursWib } = require("../config/working-hours.config");
+const {
+  ROOMS_PER_SLOT,
+  PENDING_RESERVATION_MINUTES,
+} = require("../config/booking-capacity.config");
 
 // Get therapist schedule for a specific date or date range
 const getSchedule = async (req, res) => {
@@ -113,6 +117,24 @@ const createSchedule = async (req, res) => {
     }
 
     const oneHourLater = new Date(scheduleDate.getTime() + 60 * 60 * 1000);
+    const reservationCutoff = new Date(Date.now() - PENDING_RESERVATION_MINUTES * 60 * 1000);
+
+    // Room capacity check
+    const reservedCount = await prisma.therapySession.count({
+      where: {
+        schedule: { gte: scheduleDate, lt: oneHourLater },
+        sessionStatus: { not: "CANCELLED" },
+        OR: [
+          { isActive: true },
+          { paymentStatus: "SUCCESS" },
+          { paymentStatus: "PENDING", createdAt: { gte: reservationCutoff } },
+        ],
+      },
+    });
+
+    if (reservedCount >= ROOMS_PER_SLOT) {
+      return sendResponse(res, 409, "Time slot is full (2 rooms already booked)");
+    }
 
     const conflict = await prisma.therapySession.findFirst({
       where: {
@@ -121,6 +143,7 @@ const createSchedule = async (req, res) => {
           gte: scheduleDate,
           lt: oneHourLater,
         },
+        sessionStatus: { not: "CANCELLED" },
       },
     });
 
@@ -183,6 +206,39 @@ const updateSchedule = async (req, res) => {
 
       if (!isWithinWorkingHoursWib(scheduleDate)) {
         return sendResponse(res, 400, "Schedule must be within working hours (14:00-21:00 WIB)");
+      }
+
+      const oneHourLater = new Date(scheduleDate.getTime() + 60 * 60 * 1000);
+      const reservationCutoff = new Date(Date.now() - PENDING_RESERVATION_MINUTES * 60 * 1000);
+
+      const reservedCount = await prisma.therapySession.count({
+        where: {
+          id: { not: id },
+          schedule: { gte: scheduleDate, lt: oneHourLater },
+          sessionStatus: { not: "CANCELLED" },
+          OR: [
+            { isActive: true },
+            { paymentStatus: "SUCCESS" },
+            { paymentStatus: "PENDING", createdAt: { gte: reservationCutoff } },
+          ],
+        },
+      });
+
+      if (reservedCount >= ROOMS_PER_SLOT) {
+        return sendResponse(res, 409, "Time slot is full (2 rooms already booked)");
+      }
+
+      const conflict = await prisma.therapySession.findFirst({
+        where: {
+          id: { not: id },
+          therapistId,
+          schedule: { gte: scheduleDate, lt: oneHourLater },
+          sessionStatus: { not: "CANCELLED" },
+        },
+      });
+
+      if (conflict) {
+        return sendResponse(res, 409, "Schedule conflict: You already have a session at this time");
       }
     }
 

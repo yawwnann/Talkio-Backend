@@ -7,6 +7,10 @@ const {
   WORK_END_HOUR_WIB,
   getWibHour,
 } = require("../config/working-hours.config");
+const {
+  ROOMS_PER_SLOT,
+  PENDING_RESERVATION_MINUTES,
+} = require("../config/booking-capacity.config");
 
 // Get patients scheduled with this therapist
 const getPatients = async (req, res) => {
@@ -285,40 +289,47 @@ const getAvailability = async (req, res) => {
     const endOfDay = new Date(selectedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const whereClause = {
-      schedule: {
-        gte: startOfDay,
-        lte: endOfDay,
+    const reservationCutoff = new Date(Date.now() - PENDING_RESERVATION_MINUTES * 60 * 1000);
+
+    // Get all reserved sessions for this date (SUCCESS + fresh PENDING)
+    const daySessions = await prisma.therapySession.findMany({
+      where: {
+        schedule: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        sessionStatus: { not: "CANCELLED" },
+        OR: [
+          { isActive: true },
+          { paymentStatus: "SUCCESS" },
+          { paymentStatus: "PENDING", createdAt: { gte: reservationCutoff } },
+        ],
       },
-      paymentStatus: "SUCCESS",
-    };
-
-    if (therapistId) {
-      whereClause.therapistId = therapistId;
-    }
-
-    // Get all booked sessions for this date
-    const bookedSessions = await prisma.therapySession.findMany({
-      where: whereClause,
       select: {
         schedule: true,
-        therapyType: true,
+        therapistId: true,
       },
     });
 
     // Define available time slots (14:00 to 21:00 WIB, 1 hour slots)
     const availableSlots = [];
     for (let hour = WORK_START_HOUR_WIB; hour < WORK_END_HOUR_WIB; hour++) {
-      // Check if this slot is booked
-      const isBooked = bookedSessions.some((session) => {
-        const sessionStart = new Date(session.schedule);
-        return getWibHour(sessionStart) === hour;
-      });
+      const sessionsInHour = daySessions.filter((s) => getWibHour(new Date(s.schedule)) === hour);
+      const bookedCount = sessionsInHour.length;
+      const therapistBookedCount = therapistId
+        ? sessionsInHour.filter((s) => s.therapistId === therapistId).length
+        : 0;
+
+      const remainingCapacity = Math.max(0, ROOMS_PER_SLOT - bookedCount);
+      const isAvailable = bookedCount < ROOMS_PER_SLOT && (!therapistId || therapistBookedCount < 1);
 
       availableSlots.push({
         time: `${hour.toString().padStart(2, "0")}:00`,
         endTime: `${(hour + 1).toString().padStart(2, "0")}:00`,
-        isAvailable: !isBooked,
+        isAvailable,
+        bookedCount,
+        capacity: ROOMS_PER_SLOT,
+        remainingCapacity,
       });
     }
 

@@ -2,6 +2,10 @@ const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { initializeMidtrans, THERAPY_PRICE } = require("../config/midtrans.config");
 const { isWithinWorkingHoursWib } = require("../config/working-hours.config");
+const {
+  ROOMS_PER_SLOT,
+  PENDING_RESERVATION_MINUTES,
+} = require("../config/booking-capacity.config");
 
 const createSession = async (req, res) => {
   try {
@@ -39,6 +43,46 @@ const createSession = async (req, res) => {
 
     if (!isWithinWorkingHoursWib(scheduleDate)) {
       return sendResponse(res, 400, "Schedule must be within working hours (14:00-21:00 WIB)");
+    }
+
+    const oneHourLater = new Date(scheduleDate.getTime() + 60 * 60 * 1000);
+    const reservationCutoff = new Date(Date.now() - PENDING_RESERVATION_MINUTES * 60 * 1000);
+
+    // Room capacity check (2 rooms per time slot)
+    const reservedCount = await prisma.therapySession.count({
+      where: {
+        schedule: { gte: scheduleDate, lt: oneHourLater },
+        sessionStatus: { not: "CANCELLED" },
+        OR: [
+          { isActive: true },
+          { paymentStatus: "SUCCESS" },
+          { paymentStatus: "PENDING", createdAt: { gte: reservationCutoff } },
+        ],
+      },
+    });
+
+    if (reservedCount >= ROOMS_PER_SLOT) {
+      return sendResponse(res, 409, "Time slot is full (2 rooms already booked)");
+    }
+
+    // Therapist cannot handle two sessions at the same time
+    if (therapistId) {
+      const therapistReservedCount = await prisma.therapySession.count({
+        where: {
+          therapistId,
+          schedule: { gte: scheduleDate, lt: oneHourLater },
+          sessionStatus: { not: "CANCELLED" },
+          OR: [
+            { isActive: true },
+            { paymentStatus: "SUCCESS" },
+            { paymentStatus: "PENDING", createdAt: { gte: reservationCutoff } },
+          ],
+        },
+      });
+
+      if (therapistReservedCount >= 1) {
+        return sendResponse(res, 409, "Therapist is not available at this time");
+      }
     }
 
     // Create session (PENDING)
