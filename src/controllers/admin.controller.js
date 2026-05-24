@@ -289,6 +289,184 @@ const uploadAsset = async (req, res) => {
   }
 };
 
+const createUser = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password) {
+      return sendResponse(res, 400, "Name, email, and password are required");
+    }
+
+    const validRole = role || "THERAPIST";
+    if (!["THERAPIST", "PARENT"].includes(validRole)) {
+      return sendResponse(res, 400, "Role must be THERAPIST or PARENT");
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return sendResponse(res, 400, "Email already registered");
+    }
+
+    const bcrypt = require("bcryptjs");
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: validRole,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isBlocked: true,
+        createdAt: true,
+      },
+    });
+
+    return sendResponse(res, 201, "User created successfully", user);
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
+const getAdminPayments = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, search } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (status) where.paymentStatus = status;
+    if (search) {
+      where.OR = [
+        { child: { name: { contains: search } } },
+        { therapist: { name: { contains: search } } },
+        { id: { contains: search } },
+      ];
+    }
+
+    const sessions = await prisma.therapySession.findMany({
+      where,
+      include: {
+        child: { select: { id: true, name: true } },
+        therapist: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: parseInt(limit),
+    });
+
+    const total = await prisma.therapySession.count({ where });
+    const PRICE_PER_SESSION = 165000;
+
+    const transactions = sessions.map((s) => ({
+      id: s.id,
+      transactionId: s.transactionId || `TRX-${s.id.slice(0, 8)}`,
+      sessionId: s.id,
+      patientName: s.child?.name || "-",
+      therapistName: s.therapist?.name || "-",
+      therapistEmail: s.therapist?.email || "-",
+      therapyType: s.therapyType,
+      amount: PRICE_PER_SESSION,
+      status: s.paymentStatus,
+      date: s.createdAt.toISOString(),
+      paymentMethod: "bank_transfer",
+      schedule: s.schedule.toISOString(),
+    }));
+
+    const successCount = await prisma.therapySession.count({
+      where: { ...where, paymentStatus: "SUCCESS" },
+    });
+    const pendingCount = await prisma.therapySession.count({
+      where: { ...where, paymentStatus: "PENDING" },
+    });
+    const failedCount = await prisma.therapySession.count({
+      where: { ...where, paymentStatus: "FAILED" },
+    });
+
+    return sendResponse(res, 200, "Payments fetched", {
+      transactions,
+      summary: { success: successCount, pending: pendingCount, failed: failedCount },
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
+const getAdminReports = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, search } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (status) where.status = status;
+    if (search) {
+      where.OR = [
+        { child: { name: { contains: search } } },
+        { therapist: { name: { contains: search } } },
+        { title: { contains: search } },
+      ];
+    }
+
+    const notes = await prisma.progressNote.findMany({
+      where,
+      include: {
+        child: { select: { id: true, name: true } },
+        therapist: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: parseInt(limit),
+    });
+
+    const total = await prisma.progressNote.count({ where });
+
+    const sentCount = await prisma.progressNote.count({
+      where: { ...where, status: "SENT" },
+    });
+    const draftCount = await prisma.progressNote.count({
+      where: { ...where, status: "DRAFT" },
+    });
+
+    const reports = notes.map((n) => ({
+      id: n.id,
+      childName: n.child?.name || "-",
+      therapistName: n.therapist?.name || "-",
+      therapistEmail: n.therapist?.email || "-",
+      title: n.title,
+      content: n.content,
+      status: n.status,
+      date: n.date.toISOString().split("T")[0],
+      createdAt: n.createdAt.toISOString(),
+    }));
+
+    return sendResponse(res, 200, "Reports fetched", {
+      reports,
+      summary: { sent: sentCount, draft: draftCount },
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   getDashboardStats,
   manageUser,
@@ -297,4 +475,7 @@ module.exports = {
   getAllAssets,
   deleteAsset,
   uploadAsset,
+  getAdminPayments,
+  getAdminReports,
+  createUser,
 };

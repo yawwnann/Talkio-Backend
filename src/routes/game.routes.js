@@ -12,10 +12,19 @@ router.post(
   authorizeRoles("PARENT"),
   gameController.logGameResult,
 );
+
 router.get(
   "/history/:childId",
   authenticateToken,
+  authorizeRoles("PARENT", "THERAPIST", "ADMIN"),
   gameController.getGameHistory,
+);
+
+router.get(
+  "/recommendations/:childId",
+  authenticateToken,
+  authorizeRoles("PARENT", "THERAPIST", "ADMIN"),
+  gameController.getGameRecommendations,
 );
 
 module.exports = router;

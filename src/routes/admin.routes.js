@@ -19,6 +19,12 @@ router.get(
   authorizeRoles("ADMIN"),
   adminController.getAllUsers,
 );
+router.post(
+  "/users",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  adminController.createUser,
+);
 router.put(
   "/users/:id",
   authenticateToken,
@@ -49,6 +55,18 @@ router.post(
   authorizeRoles("ADMIN"),
   upload.single("file"),
   adminController.uploadAsset,
+);
+router.get(
+  "/payments",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  adminController.getAdminPayments,
+);
+router.get(
+  "/reports",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  adminController.getAdminReports,
 );
 
 module.exports = router;
