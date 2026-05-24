@@ -2,6 +2,7 @@ const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { initializeMidtrans, THERAPY_PRICE } = require("../config/midtrans.config");
 const { isWithinWorkingHoursWib } = require("../config/working-hours.config");
+const { isWeekendIsoDate } = require("../utils/date-utils");
 const {
   ROOMS_PER_SLOT,
   PENDING_RESERVATION_MINUTES,
@@ -39,6 +40,15 @@ const createSession = async (req, res) => {
     const scheduleDate = new Date(schedule);
     if (Number.isNaN(scheduleDate.getTime())) {
       return sendResponse(res, 400, "Invalid schedule date");
+    }
+
+    // Sabtu/Minggu libur (cek berdasarkan tanggal yang dikirim client, bukan timezone server)
+    if (isWeekendIsoDate(schedule)) {
+      return sendResponse(
+        res,
+        400,
+        "Hari Sabtu dan Minggu libur. Silakan pilih hari lain."
+      );
     }
 
     if (!isWithinWorkingHoursWib(scheduleDate)) {

@@ -2,6 +2,7 @@ const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { generatePatientReport } = require("../utils/pdf-generator");
 const fs = require("fs");
+const { isWeekendIsoDate } = require("../utils/date-utils");
 const {
   WORK_START_HOUR_WIB,
   WORK_END_HOUR_WIB,
@@ -281,6 +282,15 @@ const getAvailability = async (req, res) => {
 
     if (!date) {
       return sendResponse(res, 400, "Date parameter is required");
+    }
+
+    // Sabtu/Minggu libur
+    if (isWeekendIsoDate(date)) {
+      return sendResponse(
+        res,
+        400,
+        "Hari Sabtu dan Minggu libur. Silakan pilih hari lain."
+      );
     }
 
     const selectedDate = new Date(date);

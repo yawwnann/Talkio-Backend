@@ -1,6 +1,7 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { isWithinWorkingHoursWib } = require("../config/working-hours.config");
+const { isWeekendIsoDate } = require("../utils/date-utils");
 const {
   ROOMS_PER_SLOT,
   PENDING_RESERVATION_MINUTES,
@@ -126,6 +127,14 @@ const createSchedule = async (req, res) => {
       return sendResponse(res, 400, "Invalid schedule date");
     }
 
+    if (isWeekendIsoDate(schedule)) {
+      return sendResponse(
+        res,
+        400,
+        "Hari Sabtu dan Minggu libur. Silakan pilih hari lain."
+      );
+    }
+
     if (!isWithinWorkingHoursWib(scheduleDate)) {
       return sendResponse(res, 400, "Schedule must be within working hours (14:00-21:00 WIB)");
     }
@@ -216,6 +225,14 @@ const updateSchedule = async (req, res) => {
       scheduleDate = new Date(schedule);
       if (Number.isNaN(scheduleDate.getTime())) {
         return sendResponse(res, 400, "Invalid schedule date");
+      }
+
+      if (isWeekendIsoDate(schedule)) {
+        return sendResponse(
+          res,
+          400,
+          "Hari Sabtu dan Minggu libur. Silakan pilih hari lain."
+        );
       }
 
       if (!isWithinWorkingHoursWib(scheduleDate)) {
