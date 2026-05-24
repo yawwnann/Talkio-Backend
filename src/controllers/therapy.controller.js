@@ -147,6 +147,19 @@ const createSession = async (req, res) => {
       paymentUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/mock/${session.id}`;
     }
 
+    // Emit notification to parent
+    try {
+      const { sendNotification } = require("../services/notification.service");
+      await sendNotification({
+        userId: parentId,
+        title: "Booking Berhasil",
+        body: `Sesi terapi untuk ${child.name} berhasil di-booking. Silakan selesaikan pembayaran.`,
+        type: "THERAPY_UPDATE",
+      });
+    } catch (notifErr) {
+      console.warn("Failed to send notification:", notifErr);
+    }
+
     return sendResponse(
       res,
       201,

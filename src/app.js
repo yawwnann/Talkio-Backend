@@ -41,6 +41,7 @@ const paymentRoutes = require("./routes/payment.routes");
 const audioRoutes = require("./routes/audio.routes");
 const educationRoutes = require("./routes/education.routes");
 const parentRoutes = require("./routes/parent.routes");
+const notificationRoutes = require("./routes/notification.routes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -57,9 +58,20 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/v1/audio", audioRoutes);
 app.use("/api/education", educationRoutes);
 app.use("/api/parent", parentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ── Static files ─────────────────────────────────────────────────────────────
 app.use("/uploads", express.static("uploads"));
+
+// ── Health check ─────────────────────────────────────────────────────────────
+app.get("/", (_req, res) => {
+  res.json({
+    status: "success",
+    message: "Welcome to Speech Delay Detection API",
+    version: "1.0.0",
+    env: process.env.NODE_ENV || "development",
+  });
+});
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {
@@ -79,7 +91,15 @@ module.exports = app;
 
 // Only listen when run locally (not Vercel)
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const http = require("http");
+  const { initWebSocket } = require("./websocket");
+
+  const server = http.createServer(app);
+  
+  // Initialize WebSocket
+  initWebSocket(server);
+
+  server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }
