@@ -12,16 +12,30 @@ const getSchedule = async (req, res) => {
     const therapistId = req.user.id;
     const { startDate, endDate } = req.query;
 
-    // Auto-update past sessions to CANCELLED if they were not explicitly completed
+    // Auto-update stale reservations and past paid sessions:
+    // - Expired payment reservations (PENDING too long) -> CANCELLED
+    // - Past paid sessions not yet confirmed -> PENDING_CONFIRMATION (NOT cancelled)
+    const reservationCutoff = new Date(
+      Date.now() - PENDING_RESERVATION_MINUTES * 60 * 1000
+    );
+
+    await prisma.therapySession.updateMany({
+      where: {
+        sessionStatus: "SCHEDULED",
+        paymentStatus: "PENDING",
+        createdAt: { lt: reservationCutoff },
+      },
+      data: { sessionStatus: "CANCELLED" },
+    });
+
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     await prisma.therapySession.updateMany({
       where: {
         sessionStatus: "SCHEDULED",
+        paymentStatus: "SUCCESS",
         schedule: { lt: oneHourAgo },
       },
-      data: {
-        sessionStatus: "CANCELLED",
-      },
+      data: { sessionStatus: "PENDING_CONFIRMATION" },
     });
 
     // Build date filter
@@ -304,15 +318,21 @@ function getSessionStatus(session) {
   const sessionTime = new Date(session.schedule);
   const oneHourAfter = new Date(sessionTime.getTime() + 60 * 60 * 1000);
 
-  // If status is already completed or cancelled, return it
-  if (session.sessionStatus === 'COMPLETED' || session.sessionStatus === 'CANCELLED') {
+  // If status is already terminal, return it
+  if (
+    session.sessionStatus === 'COMPLETED' ||
+    session.sessionStatus === 'CANCELLED' ||
+    session.sessionStatus === 'PENDING_CONFIRMATION'
+  ) {
     return session.sessionStatus;
   }
 
-  // If it is scheduled but the time has passed, it should have been updated by getSchedule to CANCELLED.
-  // But just in case, we can also return CANCELLED here dynamically.
-  if (now > oneHourAfter && session.sessionStatus !== 'COMPLETED') {
-    return 'CANCELLED';
+  // If the session window has passed and it was paid, it needs therapist confirmation.
+  // Do NOT auto-cancel paid sessions just because the therapist hasn't clicked "selesai" yet.
+  if (now > oneHourAfter) {
+    return session.paymentStatus === 'SUCCESS'
+      ? 'PENDING_CONFIRMATION'
+      : 'CANCELLED';
   }
 
   if (sessionTime > now) {
@@ -348,7 +368,7 @@ const completeSchedule = async (req, res) => {
     // Update the session status
     const updatedSession = await prisma.therapySession.update({
       where: { id },
-      data: { sessionStatus: 'COMPLETED' },
+      data: { sessionStatus: 'COMPLETED', isActive: false },
     });
 
     return sendResponse(res, 200, "Schedule completed successfully", updatedSession);

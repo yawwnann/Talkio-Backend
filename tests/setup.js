@@ -29,7 +29,11 @@ jest.mock("@prisma/client", () => {
     therapySession: {
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
       count: jest.fn(),
     },
     gameLog: {
@@ -82,6 +86,9 @@ jest.mock("../src/services/ml.service", () => ({
     service: "http://localhost:5000",
   }),
 }));
+
+// Ensure required env vars exist for controllers
+process.env.JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret";
 
 // Suppress console during tests
 global.console = {

@@ -27,14 +27,14 @@ describe("Diagnosis Controller", () => {
       const prisma = new PrismaClient();
       
       const mockChild = {
-        id: "child-uuid",
+        id: "11111111-1111-4111-8111-111111111111",
         parentId: "parent-uuid",
         dateOfBirth: new Date("2020-01-01"),
       };
 
       const mockDiagnosis = {
-        id: "diagnosis-uuid",
-        childId: "child-uuid",
+        id: "22222222-2222-4222-8222-222222222222",
+        childId: "11111111-1111-4111-8111-111111111111",
         symptoms: ["symptom1", "symptom2"],
         riskLevel: "MEDIUM",
         score: 50,
@@ -48,7 +48,7 @@ describe("Diagnosis Controller", () => {
       const res = await request(app)
         .post("/api/diagnosis/check")
         .send({
-          childId: "child-uuid",
+          childId: "11111111-1111-4111-8111-111111111111",
           symptoms: ["symptom1", "symptom2", "symptom3"],
           useML: true,
         });
@@ -67,7 +67,7 @@ describe("Diagnosis Controller", () => {
       const res = await request(app)
         .post("/api/diagnosis/check")
         .send({
-          childId: "nonexistent",
+          childId: "33333333-3333-4333-8333-333333333333",
           symptoms: ["symptom1"],
         });
 
@@ -78,7 +78,7 @@ describe("Diagnosis Controller", () => {
       const res = await request(app)
         .post("/api/diagnosis/check")
         .send({
-          childId: "child-uuid",
+          childId: "11111111-1111-4111-8111-111111111111",
           symptoms: [],
         });
 
@@ -93,8 +93,8 @@ describe("Diagnosis Controller", () => {
       
       const mockHistory = [
         {
-          id: "diagnosis-1",
-          childId: "child-uuid",
+          id: "44444444-4444-4444-8444-444444444444",
+          childId: "11111111-1111-4111-8111-111111111111",
           riskLevel: "HIGH",
           score: 85,
           createdAt: new Date(),
@@ -104,7 +104,9 @@ describe("Diagnosis Controller", () => {
 
       prisma.diagnosis.findMany.mockResolvedValue(mockHistory);
 
-      const res = await request(app).get("/api/diagnosis/history/child-uuid");
+      const res = await request(app).get(
+        "/api/diagnosis/history/11111111-1111-4111-8111-111111111111",
+      );
 
       expect(res.statusCode).toBe(200);
       expect(res.body.status).toBe("success");

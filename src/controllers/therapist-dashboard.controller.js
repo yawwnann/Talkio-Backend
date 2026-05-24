@@ -152,7 +152,27 @@ const getDashboardStats = async (req, res) => {
           childName: session.child.name,
           time: session.schedule,
           therapyType: session.therapyType,
-          status: session.isActive ? 'SCHEDULED' : 'CANCELLED',
+          status: (() => {
+            const sessionTime = new Date(session.schedule);
+            const oneHourAfter = new Date(sessionTime.getTime() + 60 * 60 * 1000);
+
+            if (
+              session.sessionStatus === 'COMPLETED' ||
+              session.sessionStatus === 'CANCELLED' ||
+              session.sessionStatus === 'PENDING_CONFIRMATION'
+            ) {
+              return session.sessionStatus;
+            }
+
+            if (now > oneHourAfter) {
+              return session.paymentStatus === 'SUCCESS'
+                ? 'PENDING_CONFIRMATION'
+                : 'CANCELLED';
+            }
+
+            if (sessionTime > now) return 'SCHEDULED';
+            return 'ONGOING';
+          })(),
         })),
       },
       recentUpdates: allUpdates,
