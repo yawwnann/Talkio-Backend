@@ -91,6 +91,15 @@ app.get("/api/dev/seed", async (_req, res) => {
     const prisma = new PrismaClient();
     const passwordHash = await bcrypt.hash("password123", 10);
 
+    // Clean up duplicates created by normalizeEmail() bug
+    const stale = [
+      "putriningterapis@gmail.com",
+      "ermaterapis@gmail.com",
+    ];
+    for (const email of stale) {
+      await prisma.user.deleteMany({ where: { email } });
+    }
+
     const accounts = [
       { email: "admin@gmail.com", role: "ADMIN", name: "Admin" },
       { email: "fiolita@gmail.com", role: "PARENT", name: "Fiolita" },
@@ -101,12 +110,14 @@ app.get("/api/dev/seed", async (_req, res) => {
     let created = 0;
     for (const a of accounts) {
       try {
-        await prisma.user.create({
-          data: { email: a.email, password: passwordHash, role: a.role, name: a.name },
+        await prisma.user.upsert({
+          where: { email: a.email },
+          update: { name: a.name, role: a.role },
+          create: { email: a.email, password: passwordHash, role: a.role, name: a.name },
         });
         created++;
       } catch (e) {
-        // skip duplicate
+        // skip
       }
     }
 
