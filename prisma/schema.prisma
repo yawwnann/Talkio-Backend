@@ -73,14 +73,22 @@ model Child {
 }
 
 model Diagnosis {
-  id            String         @id @default(uuid())
-  childId       String
-  child         Child          @relation(fields: [childId], references: [id])
-  symptoms      Json
-  riskLevel     RiskLevel
-  score         Float
-  recommendation String?
-  createdAt     DateTime       @default(now())
+  id             String         @id @default(uuid())
+  childId        String
+  child          Child          @relation(fields: [childId], references: [id])
+  answers        Json           // Jawaban pertanyaan
+  ageInMonths    Int            // Usia anak dalam bulan saat diagnosis
+  ageCategory    String         // Kategori usia (Infant, Toddler, Preschool)
+  riskLevel      RiskLevel
+  confidence     Float          @default(0.95) // Confidence score (0-1)
+  score          Int            // Skor dalam persen (0-100)
+  derivedFacts   Json           // Fakta yang diturunkan dari forward chaining
+  triggeredRules Json           // Rules yang dipicu
+  findings       Json          // Temuan per kategori
+  recommendations Json        // Array rekomendasi
+  summary        String?       // Ringkasan text
+  symptom        String?       @db.Text // Backward compatibility
+  createdAt      DateTime       @default(now())
 
 
   @@map("diagnoses")

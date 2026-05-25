@@ -22,5 +22,10 @@ router.get(
   validate,
   diagnosisController.getDiagnosisHistory,
 );
+router.get(
+  "/:id",
+  authenticateToken,
+  diagnosisController.getDiagnosisById,
+);
 
 module.exports = router;

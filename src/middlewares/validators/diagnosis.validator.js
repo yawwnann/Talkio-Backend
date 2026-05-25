@@ -5,13 +5,16 @@ const validateDiagnosisCheck = [
   body("childId")
     .isUUID()
     .withMessage("Invalid child ID format"),
-  body("symptoms")
-    .isArray({ min: 1 })
-    .withMessage("Symptoms must be an array with at least one item")
-    .custom((symptoms) => {
-      // Validate each symptom is a valid format
-      const validTypes = ["string", "number", "boolean", "object"];
-      return symptoms.every((s) => validTypes.includes(typeof s));
+  body("answers")
+    .isObject()
+    .withMessage("Answers must be an object")
+    .custom((answers) => {
+      // Validate each answer is a string
+      const values = Object.values(answers);
+      if (values.length === 0) {
+        throw new Error("Answers cannot be empty");
+      }
+      return values.every(v => typeof v === "string");
     }),
 ];
 

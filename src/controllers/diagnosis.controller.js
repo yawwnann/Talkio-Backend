@@ -1,41 +1,13 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
-
-// Rule-Based Logic
-const calculateRisk = (symptoms) => {
-  // Simple logic: If more than 5 symptoms, High Risk. 3-5 Medium. < 3 Low.
-  let score = 0;
-  if (Array.isArray(symptoms)) {
-    score = symptoms.length * 10; // Arbitrary scoring
-  }
-
-  // Normalize score to 0-1 for risk level
-  // Let's say max score is 100
-  let normalizedScore = score / 100;
-  if (normalizedScore > 1) normalizedScore = 1;
-
-  let riskLevel = "LOW";
-  let recommendation = "Keep monitoring.";
-
-  if (normalizedScore > 0.7) {
-    riskLevel = "HIGH";
-    recommendation = "Consult a therapist immediately.";
-  } else if (normalizedScore >= 0.3) {
-    riskLevel = "MEDIUM";
-    recommendation = "Observation recommended.";
-  }
-
-  return { riskLevel, score, recommendation };
-};
+const { ageInMonths } = require("../utils/age");
+const { ForwardChainingEngine } = require("../services/forwardChaining.service");
 
 const createDiagnosis = async (req, res) => {
   try {
-    const { childId, symptoms } = req.body;
+    const { childId, answers } = req.body;
 
-    // Validate child belongs to parent
-    const child = await prisma.child.findUnique({
-      where: { id: childId },
-    });
+    const child = await prisma.child.findUnique({ where: { id: childId } });
 
     if (!child) {
       return sendResponse(res, 404, "Child not found");
@@ -45,36 +17,49 @@ const createDiagnosis = async (req, res) => {
       return sendResponse(res, 403, "Access denied.");
     }
 
-    // Use rule-based logic
-    const fallback = calculateRisk(symptoms);
-    const riskLevel = fallback.riskLevel;
-    const score = fallback.score;
-    const recommendation = fallback.recommendation;
+    const childAgeInMonths = ageInMonths(child.dateOfBirth);
+    const fcEngine = new ForwardChainingEngine();
+    const fcResult = fcEngine.infer(answers, childAgeInMonths);
 
     const newDiagnosis = await prisma.diagnosis.create({
       data: {
         childId,
-        symptoms: symptoms, // Store as JSON
-        riskLevel,
-        score,
-        recommendation,
+        answers: answers,
+        ageInMonths: childAgeInMonths,
+        ageCategory: fcResult.ageCategory,
+        riskLevel: fcResult.riskLevel,
+        confidence: fcResult.confidence,
+        score: fcResult.score,
+        derivedFacts: fcResult.derivedFacts,
+        triggeredRules: fcResult.triggeredRules,
+        findings: fcResult.categoryFindings,
+        recommendations: fcResult.recommendations,
+        summary: JSON.stringify(fcResult.summary),
+        symptom: answers.vocabulary_count || null,
       },
     });
 
-    return sendResponse(
-      res,
-      201,
-      "Diagnosis created successfully",
-      {
-        ...newDiagnosis,
-        risk_level: riskLevel,
-        score: score,
-        recommendation: recommendation,
-        next_step: riskLevel === "HIGH" ? "/api/therapy/booking" : "/api/diagnosis/history",
-      }
-    );
+    const responseData = {
+      id: newDiagnosis.id,
+      childId: newDiagnosis.childId,
+      answers: newDiagnosis.answers,
+      ageInMonths: newDiagnosis.ageInMonths,
+      ageCategory: newDiagnosis.ageCategory,
+      riskLevel: newDiagnosis.riskLevel,
+      confidence: newDiagnosis.confidence,
+      score: newDiagnosis.score,
+      derivedFacts: newDiagnosis.derivedFacts,
+      triggeredRules: newDiagnosis.triggeredRules,
+      findings: newDiagnosis.findings,
+      recommendations: newDiagnosis.recommendations,
+      summary: newDiagnosis.summary,
+      nextStep: fcResult.riskLevel === "HIGH" ? "/api/therapy/booking" : "/api/diagnosis/history",
+      createdAt: newDiagnosis.createdAt,
+    };
+
+    return sendResponse(res, 201, "Diagnosis created successfully", responseData);
   } catch (error) {
-    console.error(error);
+    console.error("Error creating diagnosis:", error);
     return sendResponse(res, 500, "Internal Server Error");
   }
 };
@@ -82,18 +67,50 @@ const createDiagnosis = async (req, res) => {
 const getDiagnosisHistory = async (req, res) => {
   try {
     const { childId } = req.params;
-    const diagnosis = await prisma.diagnosis.findMany({
+    const child = await prisma.child.findUnique({ where: { id: childId } });
+
+    if (!child) {
+      return sendResponse(res, 404, "Child not found");
+    }
+
+    if (child.parentId !== req.user.id && req.user.role !== "ADMIN" && req.user.role !== "THERAPIST") {
+      return sendResponse(res, 403, "Access denied.");
+    }
+
+    const diagnoses = await prisma.diagnosis.findMany({
       where: { childId },
       orderBy: { createdAt: "desc" },
     });
-    return sendResponse(res, 200, "History fetched", diagnosis);
+
+    return sendResponse(res, 200, "History fetched", diagnoses);
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching diagnosis history:", error);
     return sendResponse(res, 500, "Internal Server Error");
   }
 };
 
-module.exports = {
-  createDiagnosis,
-  getDiagnosisHistory,
+const getDiagnosisById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const diagnosis = await prisma.diagnosis.findUnique({
+      where: { id },
+      include: { child: true },
+    });
+
+    if (!diagnosis) {
+      return sendResponse(res, 404, "Diagnosis not found");
+    }
+
+    if (diagnosis.child.parentId !== req.user.id && req.user.role !== "ADMIN" && req.user.role !== "THERAPIST") {
+      return sendResponse(res, 403, "Access denied.");
+    }
+
+    return sendResponse(res, 200, "Diagnosis fetched", diagnosis);
+  } catch (error) {
+    console.error("Error fetching diagnosis:", error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
 };
+
+module.exports = { createDiagnosis, getDiagnosisHistory, getDiagnosisById };
