@@ -5,8 +5,7 @@ const {
   authenticateToken,
   authorizeRoles,
 } = require("../middlewares/auth.middleware");
-const upload = require("../middlewares/upload.middleware");
-const { validateProgressUpload, validateFile, validate } = require("../middlewares/validators/progress.validator");
+const { validateProgressUpload, validate } = require("../middlewares/validators/progress.validator");
 
 router.post(
   "/upload",
@@ -14,8 +13,6 @@ router.post(
   authorizeRoles("PARENT"),
   validateProgressUpload,
   validate,
-  upload.single("file"),
-  validateFile,
   progressController.uploadProgress,
 );
 
