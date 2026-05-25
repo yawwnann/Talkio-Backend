@@ -130,8 +130,11 @@ model ProgressUpload {
   childId             String
   child               Child    @relation(fields: [childId], references: [id])
   fileUrl             String
+  cloudinaryPublicId  String?
   parentNotes         String?
   therapistEvaluation String?
+  fileType            String?  @default("image")
+  duration            Int?
   createdAt           DateTime @default(now())
 
   @@map("progress_uploads")
