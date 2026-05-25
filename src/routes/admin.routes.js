@@ -31,12 +31,6 @@ router.put(
   authorizeRoles("ADMIN"),
   adminController.manageUser,
 );
-router.post(
-  "/education",
-  authenticateToken,
-  authorizeRoles("ADMIN"),
-  adminController.addEducationContent,
-);
 router.get(
   "/assets",
   authenticateToken,

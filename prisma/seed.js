@@ -64,8 +64,8 @@ async function seedMinimalUsers() {
 
   // Therapist emails were not provided in the request; they must be non-empty & unique.
   const usersToCreate = [
-    { email: "admin@gmail.com", role: "ADMIN", name: null },
-    { email: "orangtua1@gmail.com", role: "PARENT", name: null },
+    { email: "admin@gmail.com", role: "ADMIN", name: "Admin" },
+    { email: "fiolita@gmail.com", role: "PARENT", name: "Fiolita" },
     {
       email: "putrining.terapis@gmail.com",
       role: "THERAPIST",
