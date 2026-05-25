@@ -17,7 +17,7 @@ const {
 const getPatients = async (req, res) => {
   try {
     const therapistId = req.user.id;
-    const patients = await prisma.therapySession.findMany({
+    const sessions = await prisma.therapySession.findMany({
       where: { therapistId, isActive: true },
       distinct: ["childId"],
       include: {
@@ -27,8 +27,34 @@ const getPatients = async (req, res) => {
       },
     });
 
-    const uniquePatients = patients.map((p) => p.child);
-    return sendResponse(res, 200, "Patients fetched", uniquePatients);
+    const patients = await Promise.all(
+      sessions.map(async (s) => {
+        const child = s.child;
+        const childSessions = await prisma.therapySession.findMany({
+          where: { childId: child.id, therapistId },
+          orderBy: { schedule: "desc" },
+          take: 1,
+        });
+        const lastSession = childSessions[0];
+        return {
+          id: child.id,
+          parentId: child.parentId,
+          name: child.name,
+          dateOfBirth: child.dateOfBirth,
+          gender: child.gender,
+          createdAt: child.createdAt,
+          updatedAt: child.updatedAt,
+          parent: child.parent,
+          totalSessions: await prisma.therapySession.count({
+            where: { childId: child.id, therapistId },
+          }),
+          lastSessionDate: lastSession?.schedule ?? null,
+          sessionStatus: lastSession?.sessionStatus ?? null,
+        };
+      }),
+    );
+
+    return sendResponse(res, 200, "Patients fetched", patients);
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Internal Server Error");
