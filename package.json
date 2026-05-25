@@ -15,7 +15,8 @@
     "postinstall": "prisma generate --schema prisma/schema.prisma"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "seed:prod": "vercel env pull .env.production && dotenv -e .env.production -- node prisma/seed.js"
   },
   "keywords": [],
   "author": "",

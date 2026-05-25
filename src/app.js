@@ -83,6 +83,31 @@ app.get("/", (_req, res) => {
   });
 });
 
+// ── Dev Seed endpoint (REMOVE after seeding) ──────────────────────────────────
+const bcrypt = require("bcryptjs");
+app.get("/api/dev/seed", async (_req, res) => {
+  try {
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    const passwordHash = await bcrypt.hash("password123", 10);
+
+    const users = await prisma.user.createMany({
+      data: [
+        { email: "admin@gmail.com", password: passwordHash, role: "ADMIN", name: "Admin" },
+        { email: "fiolita@gmail.com", password: passwordHash, role: "PARENT", name: "Fiolita" },
+        { email: "putrining.terapis@gmail.com", password: passwordHash, role: "THERAPIST", name: "Putrining Kurnia Wati, S.Tr" },
+        { email: "erma.terapis@gmail.com", password: passwordHash, role: "THERAPIST", name: "Erma Septiarini, S.Tr Kes" },
+      ],
+      skipDuplicates: true,
+    });
+
+    res.json({ status: "success", message: "Seed executed", usersCreated: users.count });
+    await prisma.$disconnect();
+  } catch (e) {
+    res.status(500).json({ status: "error", message: e.message });
+  }
+});
+
 // ── Global error handler (must be LAST) ──────────────────────────────────────
 app.use(globalErrorHandler);
 
