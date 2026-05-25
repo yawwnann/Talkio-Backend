@@ -272,6 +272,7 @@ const getPayments = async (req, res) => {
       paymentStatus: session.paymentStatus,
       paymentMethod: session.therapyType.includes("Online") ? "midtrans" : "midtrans",
       transactionId: session.transactionId,
+      paymentUrl: session.paymentUrl,
       schedule: session.schedule,
       createdAt: session.createdAt.toISOString(),
       updatedAt: session.updatedAt.toISOString(),
