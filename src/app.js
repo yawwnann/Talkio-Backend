@@ -85,49 +85,6 @@ app.get("/", (_req, res) => {
 
 // ── Dev Seed endpoint (REMOVE after seeding) ──────────────────────────────────
 const bcrypt = require("bcryptjs");
-app.get("/api/dev/seed", async (_req, res) => {
-  try {
-    const { PrismaClient } = require("@prisma/client");
-    const prisma = new PrismaClient();
-    const passwordHash = await bcrypt.hash("password123", 10);
-
-    // Clean up duplicates created by normalizeEmail() bug
-    const stale = [
-      "putriningterapis@gmail.com",
-      "ermaterapis@gmail.com",
-    ];
-    for (const email of stale) {
-      await prisma.user.deleteMany({ where: { email } });
-    }
-
-    const accounts = [
-      { email: "admin@gmail.com", role: "ADMIN", name: "Admin" },
-      { email: "fiolita@gmail.com", role: "PARENT", name: "Fiolita" },
-      { email: "putrining.terapis@gmail.com", role: "THERAPIST", name: "Putrining Kurnia Wati, S.Tr" },
-      { email: "erma.terapis@gmail.com", role: "THERAPIST", name: "Erma Septiarini, S.Tr Kes" },
-    ];
-
-    let created = 0;
-    for (const a of accounts) {
-      try {
-        await prisma.user.upsert({
-          where: { email: a.email },
-          update: { name: a.name, role: a.role },
-          create: { email: a.email, password: passwordHash, role: a.role, name: a.name },
-        });
-        created++;
-      } catch (e) {
-        // skip
-      }
-    }
-
-    res.json({ status: "success", message: "Seed executed", usersCreated: created });
-    await prisma.$disconnect();
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e.message });
-  }
-});
-
 // ── Global error handler (must be LAST) ──────────────────────────────────────
 app.use(globalErrorHandler);
 
