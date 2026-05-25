@@ -85,6 +85,23 @@ app.get("/", (_req, res) => {
 
 // ── Dev Seed endpoint (REMOVE after seeding) ──────────────────────────────────
 const bcrypt = require("bcryptjs");
+// ── Debug: check DB state (TEMPORARY) ────────────────────────────────────────
+app.get("/api/debug/db", async (_req, res) => {
+  try {
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    const users = await prisma.user.findMany({ select: { id: true, email: true, role: true } });
+    const children = await prisma.child.findMany();
+    const sessions = await prisma.therapySession.findMany({
+      select: { id: true, childId: true, therapistId: true, isActive: true, sessionStatus: true },
+    });
+    res.json({ users: users.length, children: children.length, sessions: sessions.length, sessionList: sessions });
+    await prisma.$disconnect();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Global error handler (must be LAST) ──────────────────────────────────────
 app.use(globalErrorHandler);
 
