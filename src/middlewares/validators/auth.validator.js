@@ -4,8 +4,7 @@ const { sendResponse } = require("../../utils/response");
 const validateRegister = [
   body("email")
     .isEmail()
-    .withMessage("Please provide a valid email")
-    .normalizeEmail(),
+    .withMessage("Please provide a valid email"),
   body("password")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters")
@@ -21,8 +20,7 @@ const validateRegister = [
 const validateLogin = [
   body("email")
     .isEmail()
-    .withMessage("Please provide a valid email")
-    .normalizeEmail(),
+    .withMessage("Please provide a valid email"),
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
