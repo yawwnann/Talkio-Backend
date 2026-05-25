@@ -416,16 +416,9 @@ const listTherapists = async (req, res) => {
       const reviews = therapist.therapistReviews || [];
       const averageRating = reviews.length > 0
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        : 4.5; // fallback rating if no reviews yet
-      return {
-        id: therapist.id,
-        name: therapist.name,
-        email: therapist.email,
-        totalSessions: therapist._count.therapySessions,
-        rating: parseFloat(averageRating.toFixed(1)),
-        specialization: "Terapi Bicara & Wicara",
-      };
-    });
+        : 0;
+
+        });
 
     return sendResponse(res, 200, "Therapists fetched", therapistList);
   } catch (error) {
@@ -480,7 +473,7 @@ const getTherapistDetail = async (req, res) => {
     const reviews = therapist.therapistReviews || [];
     const averageRating = reviews.length > 0
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      : 4.5;
+      : 0;
 
     const formattedReviews = reviews.map((review) => ({
       id: review.id,
