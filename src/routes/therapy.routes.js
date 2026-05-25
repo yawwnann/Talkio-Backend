@@ -22,4 +22,12 @@ router.get(
   therapyController.getHistory,
 );
 
+// Get new payment URL for pending session
+router.post(
+  "/payment-url",
+  authenticateToken,
+  authorizeRoles("PARENT"),
+  therapyController.getPaymentUrl,
+);
+
 module.exports = router;

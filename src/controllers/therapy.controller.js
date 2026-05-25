@@ -217,7 +217,115 @@ const getHistory = async (req, res) => {
   }
 };
 
+// Get new payment URL for existing pending session
+const getPaymentUrl = async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const parentId = req.user.id;
+
+    if (!sessionId) {
+      return sendResponse(res, 400, "Session ID is required");
+    }
+
+    // Get session and verify ownership
+    const session = await prisma.therapySession.findUnique({
+      where: { id: sessionId },
+      include: {
+        child: true,
+        therapist: {
+          select: { name: true, email: true },
+        },
+      },
+    });
+
+    if (!session) {
+      return sendResponse(res, 404, "Session not found");
+    }
+
+    // Verify parent owns this session
+    if (session.child.parentId !== parentId) {
+      return sendResponse(res, 403, "Access denied");
+    }
+
+    // Only allow retry for PENDING status
+    if (session.paymentStatus !== "PENDING") {
+      return sendResponse(res, 400, "Payment status is not pending. Cannot retry payment.");
+    }
+
+    // Check if session time has passed (with 30 minute tolerance)
+    const now = new Date();
+    const sessionExpired = new Date(session.schedule.getTime() + 30 * 60 * 1000) < now;
+
+    if (sessionExpired) {
+      return sendResponse(res, 400, "Session time has passed. Payment retry is no longer available.");
+    }
+
+    // Generate new Midtrans payment token
+    let paymentUrl = null;
+    let transactionToken = null;
+
+    try {
+      const snap = initializeMidtrans();
+
+      const parameter = {
+        transaction_details: {
+          order_id: `THERAPY-${session.id}-${Date.now()}`,
+          gross_amount: THERAPY_PRICE,
+        },
+        credit_card: {
+          secure: true,
+        },
+        customer_details: {
+          first_name: session.child.name,
+          email: req.user.email,
+          phone: "",
+        },
+        item_details: [{
+          id: session.therapyType,
+          price: THERAPY_PRICE,
+          quantity: 1,
+          name: `Therapy Session - ${session.therapyType}`,
+        }],
+        callbacks: {
+          finish: `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/finish`,
+        },
+      };
+
+      const transaction = await snap.createTransaction(parameter);
+
+      paymentUrl = transaction.redirect_url;
+      transactionToken = transaction.token;
+
+      // Update session with new payment info
+      await prisma.therapySession.update({
+        where: { id: session.id },
+        data: {
+          transactionId: `THERAPY-${session.id}-${Date.now()}`,
+          paymentUrl: paymentUrl,
+        },
+      });
+
+    } catch (midtransError) {
+      console.error("Midtrans error:", midtransError);
+      // Fallback to mock URL if Midtrans fails
+      paymentUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/mock/${session.id}`;
+    }
+
+    return sendResponse(res, 200, "Payment URL generated", {
+      paymentUrl,
+      transactionToken,
+      sessionId: session.id,
+      amount: THERAPY_PRICE,
+    });
+
+  } catch (error) {
+    console.error("Get payment URL error:", error);
+    return sendResponse(res, 500, "Failed to generate payment URL");
+  }
+};
+
 module.exports = {
   createSession,
   getHistory,
+  getPaymentUrl,
 };
