@@ -17,7 +17,7 @@ app.use(morgan(morganFormat));
 
 // Body parsers — wrapped with error-catcher so Express 5 json() throws
 // are forwarded to next(err) instead of crashing the whole function.
-app.use(express.json({ type: "*/*", limit: "100mb" }), jsonErrorWrapper);
+app.use(express.json({ type: "application/json", limit: "100mb" }), jsonErrorWrapper);
 app.use(express.urlencoded({ extended: true, limit: "100mb" }), jsonErrorWrapper);
 
 // ─────────────────────────────────────────────────────────────────────────────
