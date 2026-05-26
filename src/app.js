@@ -17,8 +17,8 @@ app.use(morgan(morganFormat));
 
 // Body parsers — wrapped with error-catcher so Express 5 json() throws
 // are forwarded to next(err) instead of crashing the whole function.
-app.use(express.json({ type: "*/*", limit: "10mb" }), jsonErrorWrapper);
-app.use(express.urlencoded({ extended: true, limit: "10mb" }), jsonErrorWrapper);
+app.use(express.json({ type: "*/*", limit: "100mb" }), jsonErrorWrapper);
+app.use(express.urlencoded({ extended: true, limit: "100mb" }), jsonErrorWrapper);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // IMPORTANT: Never `require()` a module that opens a DB / file / network
