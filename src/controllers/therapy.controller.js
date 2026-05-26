@@ -115,7 +115,7 @@ const createSession = async (req, res) => {
       
       const parameter = {
         transaction_details: {
-          order_id: `THERAPY-${session.id}`,
+          order_id: `THP-${session.id.replace(/-/g, '').substring(0, 20)}`,
           gross_amount: THERAPY_PRICE,
         },
         credit_card: {
@@ -146,7 +146,7 @@ const createSession = async (req, res) => {
       await prisma.therapySession.update({
         where: { id: session.id },
         data: {
-          transactionId: `THERAPY-${session.id}`,
+          transactionId: parameter.transaction_details.order_id,
           paymentUrl: paymentUrl,
         },
       });
@@ -267,9 +267,13 @@ const getPaymentUrl = async (req, res) => {
     try {
       const snap = initializeMidtrans();
 
+      // Generate short order_id (max 50 chars for Midtrans)
+      const shortId = session.id.replace(/-/g, '').substring(0, 16);
+      const orderId = `THP-${shortId}-${Date.now().toString().slice(-6)}`;
+
       const parameter = {
         transaction_details: {
-          order_id: `THERAPY-${session.id}-${Date.now()}`,
+          order_id: orderId,
           gross_amount: THERAPY_PRICE,
         },
         credit_card: {
@@ -300,7 +304,7 @@ const getPaymentUrl = async (req, res) => {
       await prisma.therapySession.update({
         where: { id: session.id },
         data: {
-          transactionId: `THERAPY-${session.id}-${Date.now()}`,
+          transactionId: orderId,
           paymentUrl: paymentUrl,
         },
       });

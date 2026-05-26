@@ -26,12 +26,36 @@ const paymentWebhook = async (req, res) => {
       return res.status(400).json({ error: "Invalid signature" });
     }
 
-    // Extract session ID from order_id (format: THERAPY-{sessionId})
-    const sessionId = orderId.replace("THERAPY-", "");
+    // Extract session ID from order_id
+    // New format: THP-{shortId}-{timestamp}
+    // We need to find the session by transactionId
+    let sessionId = null;
+
+    // Try to find session by transaction ID (exact match)
+    const session = await prisma.therapySession.findFirst({
+      where: { transactionId: orderId },
+    });
+
+    if (session) {
+      sessionId = session.id;
+    } else {
+      // Fallback: try old format extraction
+      const parts = orderId.split('-');
+      if (parts.length >= 2) {
+        // Old format: THERAPY-{uuid}
+        const potentialId = parts.slice(1).join('-');
+        const existingSession = await prisma.therapySession.findUnique({
+          where: { id: potentialId },
+        });
+        if (existingSession) {
+          sessionId = potentialId;
+        }
+      }
+    }
 
     if (!sessionId) {
-      console.error("Invalid order_id format:", orderId);
-      return res.status(400).json({ error: "Invalid order ID format" });
+      console.error("Session not found for order_id:", orderId);
+      return res.status(404).json({ error: "Session not found" });
     }
 
     // Update payment status based on transaction status
