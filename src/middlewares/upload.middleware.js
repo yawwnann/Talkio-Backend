@@ -25,11 +25,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: fileFilter,
   limits: {
-    fileSize: Math.max(
-      uploadConfig.getPhotoMaxSize(),
-      uploadConfig.getVideoMaxSize(),
-      uploadConfig.getAudioMaxSize(),
-    ),
+    fileSize: 50 * 1024 * 1024, // 50MB max
   },
 });
 

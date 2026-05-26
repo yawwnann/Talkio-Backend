@@ -43,6 +43,7 @@ const paymentRoutes = require("./routes/payment.routes");
 const audioRoutes = require("./routes/audio.routes");
 const educationRoutes = require("./routes/education.routes");
 const parentRoutes = require("./routes/parent.routes");
+const cloudinaryRoutes = require("./routes/cloudinary.routes");
 const notificationRoutes = require("./routes/notification.routes");
 
 app.use("/api/auth", authRoutes);
@@ -61,6 +62,7 @@ app.use("/api/v1/audio", audioRoutes);
 app.use("/api/education", educationRoutes);
 app.use("/api/parent", parentRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/cloudinary", cloudinaryRoutes);
 
 // ── Static files ─────────────────────────────────────────────────────────────
 app.use("/uploads", express.static("uploads"));
