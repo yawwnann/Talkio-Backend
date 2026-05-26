@@ -1,12 +1,9 @@
 const cloudinary = require("../config/cloudinary.config");
 const { sendResponse } = require("../utils/response");
-const streamifier = require("streamifier");
 
 const uploadFile = async (req, res) => {
   try {
     console.log("[Cloudinary] Request received");
-    console.log("[Cloudinary] File:", req.file);
-    console.log("[Cloudinary] Body:", req.body);
 
     if (!req.file) {
       console.log("[Cloudinary] No file in request");
@@ -28,23 +25,29 @@ const uploadFile = async (req, res) => {
       resourceType = "video"; // Cloudinary uses "video" for audio too
     }
 
-    console.log("[Cloudinary] Uploading to Cloudinary, resourceType:", resourceType);
+    console.log("[Cloudinary] Uploading to Cloudinary, resourceType:", resourceType, "size:", req.file.size);
 
-    // Upload to Cloudinary using buffer
+    // Upload to Cloudinary using buffer (with longer timeout for large files)
     const result = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: process.env.CLOUDINARY_FOLDER || "talkio_uploads",
-          resource_type: resourceType,
-          public_id: `${childId}_${Date.now()}`,
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
+      const timeout = setTimeout(() => {
+        reject(new Error("Cloudinary upload timeout (>120s)"));
+      }, 120000); // 2 minutes timeout
 
-      streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: process.env.CLOUDINARY_FOLDER || "talkio_uploads",
+            resource_type: resourceType,
+            public_id: `${childId}_${Date.now()}`,
+            timeout: 120000, // Cloudinary's own timeout
+          },
+          (error, result) => {
+            clearTimeout(timeout);
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(req.file.buffer);
     });
 
     console.log("[Cloudinary] Upload successful:", result.secure_url);

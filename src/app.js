@@ -9,6 +9,13 @@ const { globalErrorHandler, jsonErrorWrapper } = require("./middlewares/error.mi
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Increase timeout for large uploads
+app.use((req, res, next) => {
+  req.setTimeout(300000); // 5 minutes
+  res.setTimeout(300000); // 5 minutes
+  next();
+});
+
 app.use(cors());
 app.use(helmet());
 
