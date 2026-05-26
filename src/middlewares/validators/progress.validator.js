@@ -7,9 +7,7 @@ const validateProgressUpload = [
     .withMessage("Invalid child ID format"),
   body("fileUrl")
     .notEmpty()
-    .withMessage("File URL is required")
-    .isURL()
-    .withMessage("File URL must be a valid URL"),
+    .withMessage("File URL is required"),
   body("fileType")
     .optional()
     .isIn(["image", "video", "audio"])
