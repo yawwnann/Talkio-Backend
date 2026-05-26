@@ -1,69 +1,63 @@
-const cloudinary = require("../config/cloudinary.config");
+const fs = require("fs");
+const path = require("path");
 const { sendResponse } = require("../utils/response");
+
+const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads", "progress");
+
+// Ensure upload directory exists
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 const uploadFile = async (req, res) => {
   try {
-    console.log("[Cloudinary] Request received");
+    console.log("[Upload] Request received");
 
     if (!req.file) {
-      console.log("[Cloudinary] No file in request");
+      console.log("[Upload] No file in request");
       return sendResponse(res, 400, "No file uploaded");
     }
 
     const { childId } = req.body;
 
     if (!childId) {
-      console.log("[Cloudinary] No childId in request");
+      console.log("[Upload] No childId in request");
       return sendResponse(res, 400, "Child ID is required");
     }
 
-    // Determine resource type based on mimetype
-    let resourceType = "image";
+    // Generate unique filename
+    const ext = path.extname(req.file.originalname);
+    const filename = `${childId}_${Date.now()}${ext}`;
+    const filepath = path.join(UPLOAD_DIR, filename);
+
+    // Save file to local storage
+    fs.writeFileSync(filepath, req.file.buffer);
+    const fileSize = req.file.size;
+
+    console.log("[Upload] File saved:", filepath, "size:", fileSize);
+
+    // Determine file type
+    let fileType = "image";
     if (req.file.mimetype.startsWith("video/")) {
-      resourceType = "video";
+      fileType = "video";
     } else if (req.file.mimetype.startsWith("audio/")) {
-      resourceType = "video"; // Cloudinary uses "video" for audio too
+      fileType = "audio";
     }
 
-    console.log("[Cloudinary] Uploading to Cloudinary, resourceType:", resourceType, "size:", req.file.size);
-
-    // Upload to Cloudinary using buffer (with longer timeout for large files)
-    const result = await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Cloudinary upload timeout (>120s)"));
-      }, 120000); // 2 minutes timeout
-
-      cloudinary.uploader
-        .upload_stream(
-          {
-            folder: process.env.CLOUDINARY_FOLDER || "talkio_uploads",
-            resource_type: resourceType,
-            public_id: `${childId}_${Date.now()}`,
-            timeout: 120000, // Cloudinary's own timeout
-          },
-          (error, result) => {
-            clearTimeout(timeout);
-            if (error) reject(error);
-            else resolve(result);
-          }
-        )
-        .end(req.file.buffer);
-    });
-
-    console.log("[Cloudinary] Upload successful:", result.secure_url);
+    // Generate URL for the file
+    const baseUrl = process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 4000}`;
+    const fileUrl = `${baseUrl}/uploads/progress/${filename}`;
 
     return sendResponse(res, 200, "File uploaded successfully", {
-      secureUrl: result.secure_url,
-      publicId: result.public_id,
-      resourceType: result.resource_type,
-      bytes: result.bytes,
-      duration: result.duration || null,
-      format: result.format,
-      width: result.width || null,
-      height: result.height || null,
+      secureUrl: fileUrl,
+      publicId: filename,
+      resourceType: fileType,
+      bytes: fileSize,
+      duration: null,
+      format: ext.replace(".", ""),
     });
   } catch (error) {
-    console.error("[Cloudinary] Upload error:", error);
+    console.error("[Upload] Error:", error);
     return sendResponse(res, 500, "Failed to upload file: " + error.message);
   }
 };
@@ -76,12 +70,17 @@ const deleteFile = async (req, res) => {
       return sendResponse(res, 400, "Public ID is required");
     }
 
-    await cloudinary.uploader.destroy(publicId);
+    const filepath = path.join(UPLOAD_DIR, publicId);
 
-    return sendResponse(res, 200, "File deleted successfully");
+    if (fs.existsSync(filepath)) {
+      fs.unlinkSync(filepath);
+      return sendResponse(res, 200, "File deleted successfully");
+    }
+
+    return sendResponse(res, 404, "File not found");
   } catch (error) {
-    console.error("[Cloudinary] Delete error:", error);
-    return sendResponse(res, 500, "Failed to delete file: " + error.message);
+    console.error("[Upload] Delete error:", error);
+    return sendResponse(res, 500, "Failed to delete file");
   }
 };
 

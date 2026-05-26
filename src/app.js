@@ -73,6 +73,7 @@ app.use("/api/cloudinary", cloudinaryRoutes);
 
 // ── Static files ─────────────────────────────────────────────────────────────
 app.use("/uploads", express.static("uploads"));
+app.use("/uploads/progress", express.static("uploads/progress"));
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {
