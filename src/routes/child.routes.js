@@ -5,7 +5,12 @@ const {
   authenticateToken,
   authorizeRoles,
 } = require("../middlewares/auth.middleware");
-const { validateCreateChild, validateGetChild, validate } = require("../middlewares/validators/child.validator");
+const {
+  validateCreateChild,
+  validateGetChild,
+  validateUpdateChild,
+  validate,
+} = require("../middlewares/validators/child.validator");
 
 router.post(
   "/",
@@ -22,5 +27,13 @@ router.get(
   childController.getChildren,
 );
 router.get("/:id", authenticateToken, validateGetChild, validate, childController.getChildById);
+router.put(
+  "/:id",
+  authenticateToken,
+  authorizeRoles("PARENT"),
+  validateUpdateChild,
+  validate,
+  childController.updateChild,
+);
 
 module.exports = router;

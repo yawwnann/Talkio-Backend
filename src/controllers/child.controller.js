@@ -69,8 +69,45 @@ const getChildById = async (req, res) => {
   }
 };
 
+const updateChild = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, dateOfBirth, gender } = req.body;
+
+    // Check if child exists and belongs to the parent
+    const existingChild = await prisma.child.findUnique({
+      where: { id },
+    });
+
+    if (!existingChild) {
+      return sendResponse(res, 404, "Child not found");
+    }
+
+    // Ensure only the owner parent can update
+    if (existingChild.parentId !== req.user.id && req.user.role !== "ADMIN") {
+      return sendResponse(res, 403, "Access denied. You can only update your own children.");
+    }
+
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = new Date(dateOfBirth);
+    if (gender !== undefined) updateData.gender = gender;
+
+    const updatedChild = await prisma.child.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return sendResponse(res, 200, "Child updated successfully", updatedChild);
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   createChild,
   getChildren,
   getChildById,
+  updateChild,
 };
