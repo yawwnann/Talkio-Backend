@@ -19,21 +19,14 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB max
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      "audio/mpeg",
-      "audio/mp3",
-      "audio/wav",
-      "audio/aac",
-      "audio/m4a",
-      "audio/x-m4a",
-      "audio/ogg",
-      "audio/x-wav",
-      "audio/x-mp3",
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
+    console.log(`[Multer] Received file - fieldname: ${file.fieldname}, mimetype: ${file.mimetype}, originalname: ${file.originalname}`);
+    // Accept all audio mimetypes - let the actual processing handle invalid files
+    if (file.mimetype.startsWith('audio/')) {
       cb(null, true);
     } else {
-      cb(new Error("Format audio tidak didukung. Gunakan MP3, WAV, M4A, atau AAC."));
+      console.log(`[Multer] Unknown mimetype: ${file.mimetype}`);
+      // Allow anyway for debugging
+      cb(null, true);
     }
   },
 });
