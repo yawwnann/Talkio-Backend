@@ -18,7 +18,7 @@ const getPatients = async (req, res) => {
   try {
     const therapistId = req.user.id;
     const sessions = await prisma.therapySession.findMany({
-      where: { therapistId, isActive: true },
+      where: { therapistId },
       distinct: ["childId"],
       include: {
         child: {
