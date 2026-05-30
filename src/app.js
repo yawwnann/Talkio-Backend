@@ -16,8 +16,16 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors());
-app.use(helmet());
+app.use(cors({
+  origin: '*', // Allow all origins for development
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  credentials: false,
+}));
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow CORS for static files
+}));
 
 const morganFormat = process.env.NODE_ENV === "production" ? "short" : "dev";
 app.use(morgan(morganFormat));
@@ -76,7 +84,19 @@ app.use("/api/artikulasi", artikulasiRoutes);
 // ── Static files ─────────────────────────────────────────────────────────────
 app.use("/uploads", express.static("uploads"));
 app.use("/uploads/progress", express.static("uploads/progress"));
-app.use("/uploads/recordings", express.static("uploads/recordings"));
+
+// Custom handler for audio recordings with proper CORS headers
+app.use("/uploads/recordings", (req, res, next) => {
+  const path = require("path");
+  const fullPath = path.join(__dirname, "..", "uploads", "recordings", req.path);
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Range");
+  res.header("Accept-Ranges", "bytes");
+  res.header("Content-Type", "audio/mp4");
+  res.header("Cache-Control", "public, max-age=31536000");
+  next();
+}, express.static("uploads/recordings"));
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {
