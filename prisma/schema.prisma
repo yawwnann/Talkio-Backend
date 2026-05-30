@@ -125,6 +125,33 @@ model GameLog {
   @@map("game_logs")
 }
 
+model ArticulationSession {
+  id           String   @id @default(uuid())
+  childId      String
+  child        Child    @relation(fields: [childId], references: [id])
+
+  // Latihan info
+  targetWord   String   // "RUSUK", "RUMAH", dst
+  targetSound  String   // "R", "S", "L", "N"
+  roundNumber  Int      @default(1)
+
+  // Parent scoring (manual)
+  parentRating Boolean  // true = 👍 benar, false = 👎 belum
+  parentNotes String?   // Catatan orang tua
+
+  // Audio recording
+  audioUrl String?
+
+  // Session info
+  sessionScore Int     @default(0)
+  playedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([childId, targetSound])
+  @@index([childId, createdAt])
+  @@map("articulation_sessions")
+}
+
 model ProgressUpload {
   id                  String   @id @default(uuid())
   childId             String

@@ -52,6 +52,7 @@ const educationRoutes = require("./routes/education.routes");
 const parentRoutes = require("./routes/parent.routes");
 const cloudinaryRoutes = require("./routes/cloudinary.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const artikulasiRoutes = require("./routes/artikulasi.routes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -70,10 +71,12 @@ app.use("/api/education", educationRoutes);
 app.use("/api/parent", parentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
+app.use("/api/artikulasi", artikulasiRoutes);
 
 // ── Static files ─────────────────────────────────────────────────────────────
 app.use("/uploads", express.static("uploads"));
 app.use("/uploads/progress", express.static("uploads/progress"));
+app.use("/uploads/recordings", express.static("uploads/recordings"));
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {
