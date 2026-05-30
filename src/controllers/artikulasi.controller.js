@@ -66,6 +66,7 @@ const logArticulationSession = async (req, res) => {
     // Upload audio ke storage lokal
     let audioUrl = null;
     if (req.file) {
+      console.log(`[Artikulasi] Received file: ${req.file.originalname}, size: ${req.file.size} bytes, mimetype: ${req.file.mimetype}`);
       try {
         const uploadResult = await uploadFromBufferLocal(
           req.file.buffer,
@@ -73,11 +74,13 @@ const logArticulationSession = async (req, res) => {
           childId
         );
         audioUrl = uploadResult.secure_url;
-        console.log(`[Artikulasi] Audio uploaded: ${audioUrl}`);
+        console.log(`[Artikulasi] Audio uploaded successfully: ${audioUrl}`);
       } catch (uploadError) {
         console.error("[Artikulasi] Audio upload error:", uploadError);
         // Lanjut tanpa audio — tidak critical
       }
+    } else {
+      console.log('[Artikulasi] No audio file received in request');
     }
 
     // Simpan sesi ke database

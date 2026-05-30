@@ -22,6 +22,14 @@ if (!fs.existsSync(UPLOAD_DIR)) {
  * @returns {Promise<{secure_url, public_id, bytes, format}>}
  */
 async function uploadFromBufferLocal(buffer, filename, childId = "unknown") {
+  console.log(`[AudioUpload] Upload request - filename: ${filename}, childId: ${childId}`);
+  console.log(`[AudioUpload] Buffer type: ${typeof buffer}, isBuffer: ${Buffer.isBuffer(buffer)}, length: ${buffer?.length}`);
+
+  if (!buffer || !Buffer.isBuffer(buffer) || buffer.length === 0) {
+    console.error('[AudioUpload] ERROR: Buffer is empty or invalid!');
+    throw new Error('Buffer is empty or invalid');
+  }
+
   const ext = path.extname(filename) || ".m4a";
   const safeId = childId.replace(/[^a-zA-Z0-9]/g, "_");
   const uniqueFilename = `${safeId}_${Date.now()}${ext}`;
@@ -30,11 +38,13 @@ async function uploadFromBufferLocal(buffer, filename, childId = "unknown") {
   // Simpan file
   fs.writeFileSync(filepath, buffer);
 
+  // Verify file was written
+  const stats = fs.statSync(filepath);
+  console.log(`[AudioUpload] File saved: ${filepath} (${stats.size} bytes)`);
+
   // Bangun URL akses
   const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
   const url = `${baseUrl}/uploads/recordings/${uniqueFilename}`;
-
-  console.log(`[AudioUpload] Saved: ${filepath} (${buffer.length} bytes)`);
 
   return {
     secure_url: url,
