@@ -20,13 +20,15 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
-      "audio/mp4",
       "audio/mpeg",
+      "audio/mp3",
       "audio/wav",
       "audio/aac",
       "audio/m4a",
       "audio/x-m4a",
       "audio/ogg",
+      "audio/x-wav",
+      "audio/x-mp3",
     ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);

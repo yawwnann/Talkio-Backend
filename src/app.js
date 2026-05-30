@@ -93,7 +93,17 @@ app.use("/uploads/recordings", (req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Range");
   res.header("Accept-Ranges", "bytes");
-  res.header("Content-Type", "audio/mp4");
+  // Set correct MIME type based on file extension
+  const ext = path.extname(req.path).toLowerCase();
+  if (ext === '.mp3') {
+    res.header("Content-Type", "audio/mpeg");
+  } else if (ext === '.m4a') {
+    res.header("Content-Type", "audio/mp4");
+  } else if (ext === '.wav') {
+    res.header("Content-Type", "audio/wav");
+  } else if (ext === '.ogg') {
+    res.header("Content-Type", "audio/ogg");
+  }
   res.header("Cache-Control", "public, max-age=31536000");
   next();
 }, express.static("uploads/recordings"));
