@@ -6,7 +6,7 @@ const {
   getTherapistProgress,
 } = require("../services/artikulasi-fc.service");
 const {
-  uploadFromBufferLocal,
+  uploadFromBufferCloudinary,
 } = require("../services/audio-upload.service");
 
 /**
@@ -63,20 +63,20 @@ const logArticulationSession = async (req, res) => {
       return sendResponse(res, 404, "Data anak tidak ditemukan");
     }
 
-    // Upload audio ke storage lokal
+    // Upload audio ke Cloudinary
     let audioUrl = null;
     if (req.file) {
       console.log(`[Artikulasi] Received file: ${req.file.originalname}, size: ${req.file.size} bytes, mimetype: ${req.file.mimetype}`);
       try {
-        const uploadResult = await uploadFromBufferLocal(
+        const uploadResult = await uploadFromBufferCloudinary(
           req.file.buffer,
           req.file.originalname,
           childId
         );
         audioUrl = uploadResult.secure_url;
-        console.log(`[Artikulasi] Audio uploaded successfully: ${audioUrl}`);
+        console.log(`[Artikulasi] Audio uploaded to Cloudinary: ${audioUrl}`);
       } catch (uploadError) {
-        console.error("[Artikulasi] Audio upload error:", uploadError);
+        console.error("[Artikulasi] Cloudinary upload error:", uploadError);
         // Lanjut tanpa audio — tidak critical
       }
     } else {
