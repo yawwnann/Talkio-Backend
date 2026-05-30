@@ -332,13 +332,30 @@ async function getTherapistProgress(childId) {
     };
   }
 
+  // Count sessions that need review (no therapist review yet)
+  const needsReview = sessions.filter(s => !s.therapistRating).length;
+
   return {
     stats,
     summary: evaluation.summary,
     timeline: evaluation.timeline,
-    latestSessions: sessions.slice(0, 10),
+    latestSessions: sessions.slice(0, 10).map(s => ({
+      id: s.id,
+      targetWord: s.targetWord,
+      targetSound: s.targetSound,
+      parentRating: s.parentRating,
+      therapistRating: s.therapistRating,
+      therapistScore: s.therapistScore,
+      therapistNotes: s.therapistNotes,
+      audioUrl: s.audioUrl,
+      createdAt: s.createdAt,
+      reviewedAt: s.reviewedAt,
+      suggestedWords: s.suggestedWords,
+      needsReview: !s.therapistRating, // Flag for UI
+    })),
     trends,
     evaluation,
+    needsReview,
     // For chart
     chartData: buildChartData(stats, evaluation.timeline),
   };

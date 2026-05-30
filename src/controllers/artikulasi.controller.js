@@ -81,14 +81,15 @@ const logArticulationSession = async (req, res) => {
     }
 
     // Simpan sesi ke database
+    // parentRating = null jika belum dinilai orang tua (akan di-set oleh terapis nanti)
     const session = await prisma.articulationSession.create({
       data: {
         childId,
         targetWord: targetWord.toUpperCase(),
         targetSound: targetSound.toUpperCase(),
-        parentRating: parentRating === "true" || parentRating === true,
+        parentRating: parentRating ? (parentRating === "true" || parentRating === true) : null,
         parentNotes: parentNotes || null,
-        sessionScore: parseInt(sessionScore) || 15,
+        sessionScore: parseInt(sessionScore) || 0,
         roundNumber: parseInt(roundNumber) || 1,
         audioUrl,
       },
@@ -163,6 +164,119 @@ const getArticulationSessions = async (req, res) => {
 };
 
 /**
+ * POST /api/artikulasi/:sessionId/review
+ * Therapist mereview & menilai satu sesi artikulasi
+ * Accessible by: THERAPIST, ADMIN only
+ */
+const reviewArticulationSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { therapistRating, therapistScore, therapistNotes, suggestedWords } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Validasi role
+    if (!["THERAPIST", "ADMIN"].includes(userRole)) {
+      return sendResponse(res, 403, "Hanya terapis yang dapat mereview");
+    }
+
+    // Validasi field wajib
+    if (!therapistRating || therapistScore === undefined) {
+      return sendResponse(res, 400, "therapistRating dan therapistScore wajib diisi");
+    }
+
+    // Validasi rating
+    if (!["OKE", "BELUM_OK"].includes(therapistRating.toUpperCase())) {
+      return sendResponse(res, 400, "therapistRating harus 'OKE' atau 'BELUM_OK'");
+    }
+
+    // Validasi skor
+    const score = parseInt(therapistScore);
+    if (isNaN(score) || score < 0 || score > 100) {
+      return sendResponse(res, 400, "therapistScore harus angka 0-100");
+    }
+
+    // Ambil sesi
+    const session = await prisma.articulationSession.findUnique({
+      where: { id: sessionId },
+      include: { child: true },
+    });
+
+    if (!session) {
+      return sendResponse(res, 404, "Sesi artikulasi tidak ditemukan");
+    }
+
+    // Cek akses (therapist harus handle pasien ini)
+    if (userRole === "THERAPIST") {
+      const therapySession = await prisma.therapySession.findFirst({
+        where: { childId: session.childId, therapistId: userId },
+      });
+      if (!therapySession) {
+        return sendResponse(res, 403, "Anda tidak memiliki akses ke data anak ini");
+      }
+    }
+
+    // Parse suggestedWords jika ada
+    let parsedSuggestedWords = null;
+    if (suggestedWords) {
+      if (typeof suggestedWords === "string") {
+        try {
+          parsedSuggestedWords = JSON.parse(suggestedWords);
+        } catch {
+          parsedSuggestedWords = [suggestedWords];
+        }
+      } else if (Array.isArray(suggestedWords)) {
+        parsedSuggestedWords = suggestedWords;
+      }
+    }
+
+    // Update sesi dengan review terapis
+    const updatedSession = await prisma.articulationSession.update({
+      where: { id: sessionId },
+      data: {
+        therapistId: userId,
+        therapistRating: therapistRating.toUpperCase(),
+        therapistScore: score,
+        therapistNotes: therapistNotes || null,
+        suggestedWords: parsedSuggestedWords ? JSON.stringify(parsedSuggestedWords) : null,
+        reviewedAt: new Date(),
+      },
+    });
+
+    // Kirim notifikasi ke orang tua
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: session.child.parentId,
+          title: "📋 Review Artikulasi",
+          body: therapistRating === "OKE"
+            ? `Terapis telah menilai latihan "${session.targetWord}" - OKE! Skor: ${score}/100`
+            : `Terapis telah menilai latihan "${session.targetWord}" - Perlu latihan lagi. Skor: ${score}/100`,
+          type: "ARTIKULASI_REVIEW",
+        },
+      });
+    } catch (notifError) {
+      console.error("[Artikulasi] Gagal kirim notifikasi:", notifError);
+      // Lanjut walau notifikasi gagal
+    }
+
+    console.log(`[Artikulasi] Session ${sessionId} direview oleh ${userId}: ${therapistRating} (${score}/100)`);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Review berhasil disimpan",
+      data: {
+        session: updatedSession,
+        notification: "Notifikasi telah dikirim ke orang tua",
+      },
+    });
+  } catch (error) {
+    console.error("reviewArticulationSession error:", error);
+    return sendResponse(res, 500, "Terjadi kesalahan server");
+  }
+};
+
+/**
  * GET /api/artikulasi/:childId/summary
  * Ringkasan detail untuk dashboard terapis
  */
@@ -206,4 +320,5 @@ module.exports = {
   logArticulationSession,
   getArticulationSessions,
   getArticulationSummary,
+  reviewArticulationSession,
 };

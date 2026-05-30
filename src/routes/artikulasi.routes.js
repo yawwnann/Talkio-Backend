@@ -9,7 +9,7 @@ const {
   logArticulationSession,
   getArticulationSessions,
   getArticulationSummary,
-  evaluateSession,
+  reviewArticulationSession,
 } = require("../controllers/artikulasi.controller");
 
 // Configure multer for audio uploads (memory storage for Cloudinary)
@@ -76,15 +76,22 @@ router.get(
 );
 
 /**
- * POST /api/artikulasi/:sessionId/evaluate
- * Therapist adds evaluation to a session
+ * POST /api/artikulasi/:sessionId/review
+ * Therapist mereview & menilai satu sesi artikulasi
  * Accessible by: THERAPIST, ADMIN only
+ *
+ * Body: {
+ *   therapistRating: "OKE" | "BELUM_OK",
+ *   therapistScore: 0-100,
+ *   therapistNotes: string (optional),
+ *   suggestedWords: string[] (optional) - latihan tambahan
+ * }
  */
 router.post(
-  "/:sessionId/evaluate",
+  "/:sessionId/review",
   authenticateToken,
   authorizeRoles("THERAPIST", "ADMIN"),
-  evaluateSession
+  reviewArticulationSession
 );
 
 module.exports = router;

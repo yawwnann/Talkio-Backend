@@ -137,16 +137,25 @@ model ArticulationSession {
   roundNumber  Int      @default(1)
 
   // Parent scoring (manual)
-  parentRating Boolean  // true = 👍 benar, false = 👎 belum
+  parentRating Boolean?  // null = belum dinilai, true = 👍 benar, false = 👎 belum
   parentNotes String?   // Catatan orang tua
 
   // Audio recording
-  audioUrl String?
+  audioUrl     String?  // URL file audio di VPS
 
   // Session info
-  sessionScore Int     @default(0)
+  sessionScore Int      @default(0)
   playedAt     DateTime @default(now())
   createdAt    DateTime @default(now())
+
+  // ============ THERAPIST REVIEW FIELDS ============
+  therapistId        String?   // ID terapis yang mereview
+  therapistRating    String?   // "OKE" = baik, "BELUM_OK" = perlu latihan lagi
+  therapistScore     Int?      // Skor 0-100 dari terapis
+  therapistNotes     String?   @db.Text // Catatan/feedback dari terapis
+  suggestedWords     String?   // JSON array: ["RAJA", "ROTI", "RUSA"]
+  reviewedAt         DateTime? // Waktu review
+  // =================================================
 
   @@index([childId, targetSound])
   @@index([childId, createdAt])
