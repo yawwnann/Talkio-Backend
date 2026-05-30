@@ -68,6 +68,7 @@ model Child {
   gameLogs        GameLog[]
   progressUploads ProgressUpload[]
   progressNotes   ProgressNote[]
+  articulationSessions ArticulationSession[]
 
   @@map("children")
 }
