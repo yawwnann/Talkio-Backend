@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
 const { sendResponse } = require("../utils/response");
+const cloudinary = require("../config/cloudinary.config");
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads", "progress");
 
@@ -10,95 +10,94 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
+/**
+ * Upload file (gambar/video/audio) langsung ke Cloudinary
+ * Tidak lagi menyimpan ke VPS storage lokal
+ */
 const uploadFile = async (req, res) => {
   try {
-    console.log("[Upload] Request received");
+    console.log("[Cloudinary] Upload request received");
 
     if (!req.file) {
-      console.log("[Upload] No file in request");
+      console.log("[Cloudinary] No file in request");
       return sendResponse(res, 400, "No file uploaded");
     }
 
     const { childId } = req.body;
 
     if (!childId) {
-      console.log("[Upload] No childId in request");
+      console.log("[Cloudinary] No childId in request");
       return sendResponse(res, 400, "Child ID is required");
     }
 
     const isVideo = req.file.mimetype.startsWith("video/");
     const isAudio = req.file.mimetype.startsWith("audio/");
 
-    // Generate unique filename
-    const ext = path.extname(req.file.originalname);
-    const filename = `${childId}_${Date.now()}${ext}`;
-    const filepath = path.join(UPLOAD_DIR, filename);
+    // Determine resource type untuk Cloudinary
+    let resourceType = "image";
+    if (isVideo) resourceType = "video";
+    else if (isAudio) resourceType = "video"; // Cloudinary treat audio sebagai video resource
 
-    // Save file to local storage
-    fs.writeFileSync(filepath, req.file.buffer);
-    const originalSize = req.file.size;
+    // Tentukan format dan folder
+    const ext = path.extname(req.file.originalname).toLowerCase().replace(".", "") || "mp4";
+    const safeChildId = childId.replace(/[^a-zA-Z0-9]/g, "_");
+    const publicId = `${safeChildId}_${Date.now()}`;
 
-    console.log("[Upload] File saved:", filepath, "size:", originalSize);
+    let folder = "progress/images";
+    if (isVideo) folder = "progress/videos";
+    else if (isAudio) folder = "progress/audio";
 
-    let finalUrl = null;
-    let finalFilename = filename;
-    let finalSize = originalSize;
+    // Upload langsung ke Cloudinary dari buffer
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          public_id: publicId,
+          resource_type: resourceType,
+          folder: folder,
+          format: ext,
+          // Opsi untuk video: quality dan format otomatic
+          ...(isVideo && {
+            quality: "auto",
+            fetch_format: "auto",
+          }),
+        },
+        (error, result) => {
+          if (error) {
+            console.error("[Cloudinary] Upload error:", error);
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
 
-    // Convert video if needed (to H.264 MP4 for better compatibility)
-    if (isVideo) {
-      try {
-        console.log("[Upload] Converting video...");
+    console.log("[Cloudinary] Upload success:", result.secure_url, `(${result.bytes} bytes)`);
 
-        const convertedFilename = `${childId}_${Date.now()}_converted.mp4`;
-        const convertedFilepath = path.join(UPLOAD_DIR, convertedFilename);
-
-        // Convert to H.264 MP4 with AAC audio (most compatible)
-        // -crf 23: quality (lower = better quality, 18-28 is good range)
-        // -preset medium: encoding speed vs compression tradeoff
-        // -movflags +faststart: enables streaming playback while downloading
-        execSync(`ffmpeg -i "${filepath}" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k -movflags +faststart -y 2>&1`, { encoding: "utf-8" });
-
-        // Get converted file size
-        const convertedStats = fs.statSync(convertedFilepath);
-        finalSize = convertedStats.size;
-        finalUrl = `${process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 4000}`}/uploads/progress/${convertedFilename}`;
-        finalFilename = convertedFilename;
-
-        // Remove original file to save space
-        fs.unlinkSync(filepath);
-
-        console.log("[Upload] Video converted:", originalSize, "->", finalSize, "bytes");
-
-      } catch (convertError) {
-        console.error("[Upload] Convert error:", convertError.message);
-        // Continue with original file if conversion fails
-        finalUrl = `${process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 4000}`}/uploads/progress/${filename}`;
-      }
-    } else {
-      finalUrl = `${process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 4000}`}/uploads/progress/${filename}`;
-    }
-
-    // Determine file type
     let fileType = "image";
     if (isVideo) fileType = "video";
     else if (isAudio) fileType = "audio";
 
-    console.log("[Upload] Success:", finalUrl);
-
     return sendResponse(res, 200, "File uploaded successfully", {
-      secureUrl: finalUrl,
-      publicId: finalFilename,
+      secureUrl: result.secure_url,
+      publicId: result.public_id,
       resourceType: fileType,
-      bytes: finalSize,
-      duration: null,
-      format: path.extname(finalFilename).replace(".", ""),
+      bytes: result.bytes,
+      duration: result.duration || null,
+      format: result.format,
+      width: result.width,
+      height: result.height,
     });
   } catch (error) {
-    console.error("[Upload] Error:", error);
+    console.error("[Cloudinary] Error:", error);
     return sendResponse(res, 500, "Failed to upload file: " + error.message);
   }
 };
 
+/**
+ * Hapus file dari Cloudinary
+ */
 const deleteFile = async (req, res) => {
   try {
     const { publicId } = req.body;
@@ -107,16 +106,24 @@ const deleteFile = async (req, res) => {
       return sendResponse(res, 400, "Public ID is required");
     }
 
-    const filepath = path.join(UPLOAD_DIR, publicId);
+    // Tentukan resource type — perkiraan dari publicId folder
+    let resourceType = "image";
+    if (publicId.includes("/videos") || publicId.includes("/audio")) {
+      resourceType = "video";
+    }
 
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+    });
+
+    if (result.result === "ok") {
+      console.log("[Cloudinary] Deleted:", publicId);
       return sendResponse(res, 200, "File deleted successfully");
     }
 
     return sendResponse(res, 404, "File not found");
   } catch (error) {
-    console.error("[Upload] Delete error:", error);
+    console.error("[Cloudinary] Delete error:", error);
     return sendResponse(res, 500, "Failed to delete file");
   }
 };
