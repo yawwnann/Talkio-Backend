@@ -251,6 +251,7 @@ model Notification {
   body      String
   type      String   @default("INFO")
   isRead    Boolean  @default(false)
+  childId   String?  // For PROGRESS_UPLOAD notifications - links to the child
   createdAt DateTime @default(now())
 
   @@map("notifications")

@@ -3,14 +3,15 @@ const { getIO } = require("../websocket");
 
 /**
  * Creates a notification in the database and emits it via WebSocket.
- * 
- * @param {Object} params 
+ *
+ * @param {Object} params
  * @param {String} params.userId - The ID of the user receiving the notification
  * @param {String} params.title - Notification title
  * @param {String} params.body - Notification body/message
  * @param {String} [params.type="INFO"] - Type of notification (e.g. INFO, THERAPY_UPDATE)
+ * @param {String} [params.childId] - Child ID for navigation (used by PROGRESS_UPLOAD)
  */
-const sendNotification = async ({ userId, title, body, type = "INFO" }) => {
+const sendNotification = async ({ userId, title, body, type = "INFO", childId = null }) => {
   try {
     // 1. Save to Database
     const notification = await prisma.notification.create({
@@ -19,6 +20,7 @@ const sendNotification = async ({ userId, title, body, type = "INFO" }) => {
         title,
         body,
         type,
+        ...(childId && { childId }),
       },
     });
 

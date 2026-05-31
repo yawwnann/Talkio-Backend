@@ -39,6 +39,7 @@ const uploadProgress = async (req, res) => {
             title: "Progress Baru",
             body: `${child.name} mengunggah progress baru`,
             type: "PROGRESS_UPLOAD",
+            childId: childId,
           });
         }
       }
