@@ -15,6 +15,12 @@ const validateRegister = [
     .optional()
     .isIn(["PARENT", "THERAPIST", "ADMIN"])
     .withMessage("Role must be PARENT, THERAPIST, or ADMIN"),
+  body("recoveryPin")
+    .optional()
+    .isLength({ min: 6, max: 6 })
+    .withMessage("Recovery PIN must be exactly 6 digits")
+    .isNumeric()
+    .withMessage("Recovery PIN must be numeric"),
 ];
 
 const validateLogin = [
@@ -22,6 +28,29 @@ const validateLogin = [
     .isEmail()
     .withMessage("Please provide a valid email"),
   body("password").notEmpty().withMessage("Password is required"),
+];
+
+const validateForgotPassword = [
+  body("email")
+    .isEmail()
+    .withMessage("Please provide a valid email"),
+  body("recoveryPin")
+    .optional()
+    .isLength({ min: 6, max: 6 })
+    .withMessage("Recovery PIN must be exactly 6 digits")
+    .isNumeric()
+    .withMessage("Recovery PIN must be numeric"),
+];
+
+const validateResetPassword = [
+  body("token")
+    .notEmpty()
+    .withMessage("Token is required"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters")
+    .matches(/\d/)
+    .withMessage("Password must contain at least one number"),
 ];
 
 const validate = (req, res, next) => {
@@ -35,5 +64,7 @@ const validate = (req, res, next) => {
 module.exports = {
   validateRegister,
   validateLogin,
+  validateForgotPassword,
+  validateResetPassword,
   validate,
 };

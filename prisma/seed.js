@@ -100,7 +100,9 @@ async function seedChildAndSessions(users) {
   console.log("👶 Seeding child and therapy sessions...");
 
   const parent = users.find((u) => u.role === "PARENT");
-  const therapist1 = users.find((u) => u.email === "putrining.terapis@gmail.com");
+  const therapist1 = users.find(
+    (u) => u.email === "putrining.terapis@gmail.com",
+  );
   const therapist2 = users.find((u) => u.email === "erma.terapis@gmail.com");
 
   if (!parent) throw new Error("Parent user not found");
@@ -167,7 +169,8 @@ async function seedChildAndSessions(users) {
   const uploads = [
     {
       childId: child.id,
-      fileUrl: "https://res.cloudinary.com/dztyts5m1/video/upload/sample_video_progress.mp4",
+      fileUrl:
+        "https://res.cloudinary.com/dztyts5m1/video/upload/sample_video_progress.mp4",
       fileType: "video",
       duration: 45,
       parentNotes: "Budi mulai bisa mengucapkan 'mama' dengan jelas hari ini",
@@ -175,7 +178,8 @@ async function seedChildAndSessions(users) {
     },
     {
       childId: child.id,
-      fileUrl: "https://res.cloudinary.com/dztyts5m1/video/upload/sample_audio_recording.mp3",
+      fileUrl:
+        "https://res.cloudinary.com/dztyts5m1/video/upload/sample_audio_recording.mp3",
       fileType: "audio",
       duration: 30,
       parentNotes: "Latihan pengucapan huruf 'S' sudah mulai membaik",
@@ -183,7 +187,8 @@ async function seedChildAndSessions(users) {
     },
     {
       childId: child.id,
-      fileUrl: "https://res.cloudinary.com/dztyts5m1/image/upload/sample_photo_progress.jpg",
+      fileUrl:
+        "https://res.cloudinary.com/dztyts5m1/image/upload/sample_photo_progress.jpg",
       fileType: "image",
       parentNotes: "Sesi terapi hari ini berjalan lancar",
       createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),

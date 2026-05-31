@@ -219,6 +219,7 @@ const createReport = async (req, res) => {
       sessionDate,
       sessionNumber,
       title,
+      status,
     } = req.body;
 
     // Validate required fields
@@ -236,6 +237,9 @@ const createReport = async (req, res) => {
     }
 
     // Create progress note (report)
+    // Default status is "DRAFT", but if isPublished is true, set to "SENT"
+    const reportStatus = status || "DRAFT";
+
     const report = await prisma.progressNote.create({
       data: {
         childId,
@@ -243,10 +247,27 @@ const createReport = async (req, res) => {
         title,
         content: progressNotes,
         date: sessionDate ? new Date(sessionDate) : new Date(),
+        status: reportStatus,
       },
     });
 
-    return sendResponse(res, 201, "Report created successfully", report);
+    // If status is SENT, send notification to parent
+    if (reportStatus === "SENT") {
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: child.parentId,
+            title: "📋 Laporan Baru",
+            body: "Terapis telah mengirim laporan perkembangan untuk ${child.name}. Silakan查看.",
+            type: "LAPORAN_BARU",
+          },
+        });
+      } catch (notifError) {
+        console.error("[Report] Failed to send notification:", notifError);
+      }
+    }
+
+    return sendResponse(res, 201, reportStatus === "SENT" ? "Report sent successfully" : "Report saved as draft", report);
   } catch (error) {
     console.error("Create report error:", error);
     return sendResponse(res, 500, "Failed to create report");

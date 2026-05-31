@@ -11,13 +11,18 @@ const getProfile = async (req, res) => {
         email: true,
         name: true,
         role: true,
+        recoveryPin: true,
         createdAt: true,
       },
     });
 
     if (!user) return sendResponse(res, 404, "User not found");
 
-    return sendResponse(res, 200, "Profile fetched", user);
+    const { recoveryPin, ...safeUser } = user;
+    return sendResponse(res, 200, "Profile fetched", {
+      ...safeUser,
+      hasRecoveryPin: recoveryPin !== null,
+    });
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Internal Server Error");

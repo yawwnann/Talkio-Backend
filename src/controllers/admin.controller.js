@@ -404,6 +404,39 @@ const getAdminPayments = async (req, res) => {
   }
 };
 
+const resetUserPin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { recoveryPin } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return sendResponse(res, 404, "User not found");
+    }
+
+    if (!recoveryPin || recoveryPin.length !== 6 || !/^\d{6}$/.test(recoveryPin)) {
+      return sendResponse(res, 400, "PIN harus 6 digit angka");
+    }
+
+    const bcrypt = require("bcryptjs");
+    const hashedPin = await bcrypt.hash(recoveryPin, 10);
+
+    await prisma.user.update({
+      where: { id },
+      data: { recoveryPin: hashedPin },
+    });
+
+    return sendResponse(res, 200, "PIN pemulihan berhasil direset", {
+      userId: id,
+      email: user.email,
+      name: user.name,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 const getAdminReports = async (req, res) => {
   try {
     const { page = 1, limit = 20, status, search } = req.query;
@@ -478,4 +511,5 @@ module.exports = {
   getAdminPayments,
   getAdminReports,
   createUser,
+  resetUserPin,
 };

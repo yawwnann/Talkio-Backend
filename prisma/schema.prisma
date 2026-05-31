@@ -37,6 +37,7 @@ model User {
   id              String           @id @default(uuid())
   email           String           @unique
   password        String
+  recoveryPin     String?
   role            Role             @default(PARENT)
   name            String?
   isBlocked       Boolean          @default(false)
