@@ -29,6 +29,42 @@ const getProfile = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name } = req.body;
+
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+
+    if (Object.keys(updateData).length === 0) {
+      return sendResponse(res, 400, "No data to update");
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return sendResponse(res, 200, "Profile updated successfully", user);
+  } catch (error) {
+    console.error(error);
+    if (error.code === "P2025") {
+      return sendResponse(res, 404, "User not found");
+    }
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   getProfile,
+  updateProfile,
 };
