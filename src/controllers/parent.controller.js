@@ -80,6 +80,7 @@ const getReportDetail = async (req, res) => {
         child: {
           select: {
             id: true,
+            parentId: true,
             name: true,
             dateOfBirth: true,
             gender: true,
@@ -184,22 +185,29 @@ const getSchedule = async (req, res) => {
     });
 
     // Transform to response format
-    const scheduleList = sessions.map((session) => ({
-      id: session.id,
-      childId: session.childId,
-      childName: session.child.name,
-      childDob: session.child.dateOfBirth,
-      childGender: session.child.gender,
-      therapistId: session.therapistId,
-      therapistName: session.therapist?.name || "Belum ditugaskan",
-      therapistEmail: session.therapist?.email || "",
-      schedule: session.schedule,
-      therapyType: session.therapyType,
-      paymentStatus: session.paymentStatus,
-      isActive: session.isActive,
-      transactionId: session.transactionId,
-      createdAt: session.createdAt.toISOString(),
-    }));
+    const scheduleList = sessions.map((session) => {
+      // Convert schedule to ISO string with proper timezone handling
+      const scheduleDate = session.schedule instanceof Date
+        ? session.schedule.toISOString()
+        : new Date(session.schedule).toISOString();
+
+      return {
+        id: session.id,
+        childId: session.childId,
+        childName: session.child.name,
+        childDob: session.child.dateOfBirth,
+        childGender: session.child.gender,
+        therapistId: session.therapistId,
+        therapistName: session.therapist?.name || "Belum ditugaskan",
+        therapistEmail: session.therapist?.email || "",
+        schedule: scheduleDate,
+        therapyType: session.therapyType,
+        paymentStatus: session.paymentStatus,
+        isActive: session.isActive,
+        transactionId: session.transactionId,
+        createdAt: session.createdAt.toISOString(),
+      };
+    });
 
     return sendResponse(res, 200, "Schedule fetched successfully", scheduleList);
   } catch (error) {
