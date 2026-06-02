@@ -437,6 +437,37 @@ const resetUserPin = async (req, res) => {
   }
 };
 
+const resetUserPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return sendResponse(res, 404, "User not found");
+    }
+
+    // Default password for reset
+    const defaultPassword = "terapi123";
+    const bcrypt = require("bcryptjs");
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    await prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+
+    return sendResponse(res, 200, "Kata sandi berhasil direset", {
+      userId: id,
+      email: user.email,
+      name: user.name,
+      defaultPassword: defaultPassword,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 const getAdminReports = async (req, res) => {
   try {
     const { page = 1, limit = 20, status, search } = req.query;
@@ -503,6 +534,7 @@ const getAdminReports = async (req, res) => {
 module.exports = {
   getDashboardStats,
   manageUser,
+  resetUserPassword,
   addEducationContent,
   getAllUsers,
   getAllAssets,

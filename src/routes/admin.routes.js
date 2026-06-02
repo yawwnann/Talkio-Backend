@@ -31,6 +31,12 @@ router.put(
   authorizeRoles("ADMIN"),
   adminController.manageUser,
 );
+router.post(
+  "/users/:id/reset-password",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  adminController.resetUserPassword,
+);
 router.put(
   "/users/:id/reset-pin",
   authenticateToken,
