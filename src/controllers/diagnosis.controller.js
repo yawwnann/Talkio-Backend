@@ -2,6 +2,8 @@ const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { ageInMonths } = require("../utils/age");
 const { ForwardChainingEngine } = require("../services/forwardChaining.service");
+const { sendNotification } = require("../services/notification.service");
+const { sendNotificationToAllAdmins } = require("../services/notification.service");
 
 const createDiagnosis = async (req, res) => {
   try {
@@ -56,6 +58,30 @@ const createDiagnosis = async (req, res) => {
       nextStep: fcResult.riskLevel === "HIGH" ? "/api/therapy/booking" : "/api/diagnosis/history",
       createdAt: newDiagnosis.createdAt,
     };
+
+    // Send notifications
+    try {
+      // Notify parent about the result
+      await sendNotification({
+        userId: child.parentId,
+        title: fcResult.riskLevel === "HIGH" ? "Diagnosis Risiko Tinggi" : "Diagnosis Selesai",
+        body: `Hasil diagnosis untuk ${child.name}: ${fcResult.riskLevel} (skor: ${fcResult.score}%)`,
+        type: fcResult.riskLevel === "HIGH" ? "DIAGNOSIS_HIGH" : "DIAGNOSIS_COMPLETE",
+        childId: childId,
+      });
+
+      // If HIGH risk, notify admin
+      if (fcResult.riskLevel === "HIGH") {
+        await sendNotificationToAllAdmins({
+          title: "Diagnosis Risiko Tinggi",
+          body: `${child.name} didiagnosis dengan risiko tinggi (skor: ${fcResult.score}%)`,
+          type: "DIAGNOSIS_HIGH",
+          childId: childId,
+        });
+      }
+    } catch (notifError) {
+      console.warn("[Diagnosis] Notification send failed:", notifError.message);
+    }
 
     return sendResponse(res, 201, "Diagnosis created successfully", responseData);
   } catch (error) {

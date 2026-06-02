@@ -1,6 +1,7 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { sendNotification } = require("../services/notification.service");
+const { sendNotificationToAllAdmins } = require("../services/notification.service");
 
 const uploadProgress = async (req, res) => {
   try {
@@ -43,6 +44,14 @@ const uploadProgress = async (req, res) => {
           });
         }
       }
+
+      // Send notification to admin
+      await sendNotificationToAllAdmins({
+        title: "Progress Baru Diunggah",
+        body: `${child.name} mengunggah progress baru oleh orang tua`,
+        type: "PROGRESS_UPLOAD",
+        childId: childId,
+      });
     } catch (notifError) {
       console.warn("[Progress] Notification send failed:", notifError.message);
     }

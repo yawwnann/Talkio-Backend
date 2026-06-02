@@ -2,6 +2,7 @@ const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const fs = require("fs").promises;
 const path = require("path");
+const { sendNotificationToAllAdmins } = require("../services/notification.service");
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -326,6 +327,25 @@ const createUser = async (req, res) => {
         createdAt: true,
       },
     });
+
+    // Send notification to all admins about new user
+    try {
+      if (validRole === "THERAPIST") {
+        await sendNotificationToAllAdmins({
+          title: "Terapis Baru",
+          body: `${name} terdaftar sebagai terapis baru`,
+          type: "NEW_THERAPIST",
+        });
+      } else {
+        await sendNotificationToAllAdmins({
+          title: "Pengguna Baru",
+          body: `${name} terdaftar sebagai orang tua`,
+          type: "NEW_PARENT",
+        });
+      }
+    } catch (notifError) {
+      console.error("Failed to send admin notification:", notifError);
+    }
 
     return sendResponse(res, 201, "User created successfully", user);
   } catch (error) {

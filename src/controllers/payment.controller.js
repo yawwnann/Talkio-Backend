@@ -1,5 +1,7 @@
 const prisma = require("../utils/prisma");
 const crypto = require("crypto");
+const { sendNotification } = require("../services/notification.service");
+const { sendNotificationToAllAdmins } = require("../services/notification.service");
 
 const paymentWebhook = async (req, res) => {
   try {
@@ -101,11 +103,54 @@ const paymentWebhook = async (req, res) => {
         paymentStatus,
         isActive,
       },
+      include: {
+        child: { select: { id: true, name: true, parentId: true } },
+        therapist: { select: { id: true, name: true } },
+      },
     });
 
     console.log(
       `Payment updated for session ${sessionId}: ${paymentStatus} (active: ${isActive})`
     );
+
+    // Send notifications based on payment status
+    try {
+      if (paymentStatus === "SUCCESS") {
+        // Notify parent
+        if (updatedSession.child?.parentId) {
+          await sendNotification({
+            userId: updatedSession.child.parentId,
+            title: "Pembayaran Berhasil",
+            body: `Pembayaran untuk sesi terapi ${updatedSession.child.name} berhasil`,
+            type: "PAYMENT_SUCCESS",
+          });
+        }
+        // Notify admin
+        await sendNotificationToAllAdmins({
+          title: "Pembayaran Berhasil",
+          body: `Pembayaran untuk ${updatedSession.child?.name || 'anak'} berhasil (Order: ${orderId})`,
+          type: "PAYMENT_SUCCESS",
+        });
+      } else if (paymentStatus === "FAILED") {
+        // Notify parent
+        if (updatedSession.child?.parentId) {
+          await sendNotification({
+            userId: updatedSession.child.parentId,
+            title: "Pembayaran Gagal",
+            body: `Pembayaran untuk sesi terapi ${updatedSession.child?.name || 'anak'} gagal`,
+            type: "PAYMENT_FAILED",
+          });
+        }
+        // Notify admin
+        await sendNotificationToAllAdmins({
+          title: "Pembayaran Gagal",
+          body: `Pembayaran untuk ${updatedSession.child?.name || 'anak'} gagal (Order: ${orderId})`,
+          type: "PAYMENT_FAILED",
+        });
+      }
+    } catch (notifError) {
+      console.error("Failed to send payment notification:", notifError);
+    }
 
     // Return success response to Midtrans
     return res.status(200).json({
