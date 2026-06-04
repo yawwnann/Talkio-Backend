@@ -278,7 +278,7 @@ const updateReport = async (req, res) => {
   try {
     const therapistId = req.user.id;
     const { id } = req.params;
-    const { title, status } = req.body;
+    const { title, status, progressNotes, sessionDate, speechClarity, vocabulary, socialInteraction, barriers, parentExercises } = req.body;
 
     // Check if report exists
     const existingReport = await prisma.progressNote.findUnique({
@@ -296,9 +296,16 @@ const updateReport = async (req, res) => {
 
     // Build update data
     const updateData = {};
-    if (title) updateData.title = title;
+    if (title !== undefined) updateData.title = title;
     if (status) updateData.status = status;
-    
+    if (progressNotes !== undefined) updateData.progressNotes = progressNotes;
+    if (sessionDate !== undefined) updateData.sessionDate = new Date(sessionDate);
+    if (speechClarity !== undefined) updateData.speechClarity = speechClarity;
+    if (vocabulary !== undefined) updateData.vocabulary = vocabulary;
+    if (socialInteraction !== undefined) updateData.socialInteraction = socialInteraction;
+    if (barriers !== undefined) updateData.barriers = barriers;
+    if (parentExercises !== undefined) updateData.parentExercises = parentExercises;
+
     // If publishing, ensure title doesn't have "Draft"
     if (status === "SENT" && existingReport.title.includes("Draft")) {
       updateData.title = existingReport.title.replace("Draft", "Laporan");
