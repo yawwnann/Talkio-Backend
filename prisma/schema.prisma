@@ -179,17 +179,23 @@ model ProgressUpload {
 }
 
 model ProgressNote {
-  id          String   @id @default(uuid())
-  childId     String
-  child       Child    @relation(fields: [childId], references: [id])
-  therapistId String
-  therapist   User     @relation(fields: [therapistId], references: [id])
-  title       String
-  content     String   @db.Text
-  status      String   @default("DRAFT")
-  date        DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  childId            String
+  child              Child    @relation(fields: [childId], references: [id])
+  therapistId        String
+  therapist          User     @relation(fields: [therapistId], references: [id])
+  title              String
+  content            String   @db.Text
+  status             String   @default("DRAFT")
+  date               DateTime @default(now())
+  sessionDate        DateTime?
+  speechClarity      Float?
+  vocabulary         Float?
+  socialInteraction  Float?
+  barriers           String?  @db.Text
+  parentExercises    String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@map("progress_notes")
 }

@@ -248,6 +248,12 @@ const createReport = async (req, res) => {
         content: progressNotes,
         date: sessionDate ? new Date(sessionDate) : new Date(),
         status: reportStatus,
+        sessionDate: sessionDate ? new Date(sessionDate) : null,
+        speechClarity: speechClarity ? parseFloat(speechClarity) : null,
+        vocabulary: vocabulary ? parseFloat(vocabulary) : null,
+        socialInteraction: socialInteraction ? parseFloat(socialInteraction) : null,
+        barriers: barriers || null,
+        parentExercises: parentExercises ? JSON.stringify(parentExercises) : null,
       },
     });
 
@@ -298,13 +304,13 @@ const updateReport = async (req, res) => {
     const updateData = {};
     if (title !== undefined) updateData.title = title;
     if (status) updateData.status = status;
-    if (progressNotes !== undefined) updateData.progressNotes = progressNotes;
+    if (progressNotes !== undefined) updateData.content = progressNotes;
     if (sessionDate !== undefined) updateData.sessionDate = new Date(sessionDate);
-    if (speechClarity !== undefined) updateData.speechClarity = speechClarity;
-    if (vocabulary !== undefined) updateData.vocabulary = vocabulary;
-    if (socialInteraction !== undefined) updateData.socialInteraction = socialInteraction;
+    if (speechClarity !== undefined) updateData.speechClarity = speechClarity ? parseFloat(speechClarity) : null;
+    if (vocabulary !== undefined) updateData.vocabulary = vocabulary ? parseFloat(vocabulary) : null;
+    if (socialInteraction !== undefined) updateData.socialInteraction = socialInteraction ? parseFloat(socialInteraction) : null;
     if (barriers !== undefined) updateData.barriers = barriers;
-    if (parentExercises !== undefined) updateData.parentExercises = parentExercises;
+    if (parentExercises !== undefined) updateData.parentExercises = parentExercises ? JSON.stringify(parentExercises) : null;
 
     // If publishing, ensure title doesn't have "Draft"
     if (status === "SENT" && existingReport.title.includes("Draft")) {
