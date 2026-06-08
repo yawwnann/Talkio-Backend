@@ -142,6 +142,26 @@ const getDashboardStats = async (req, res) => {
       ? Math.round((totalProgressUploads / 30) * 100) / 10 // Simplified calculation
       : 0;
 
+    // Calculate pending confirmations
+    const pendingSessions = await prisma.therapySession.findMany({
+      where: {
+        therapistId,
+        sessionStatus: {
+          notIn: ['COMPLETED', 'CANCELLED']
+        },
+        paymentStatus: 'SUCCESS',
+      }
+    });
+
+    let pendingConfirmationCount = 0;
+    for (const session of pendingSessions) {
+      const sessionTime = new Date(session.schedule);
+      const oneHourAfter = new Date(sessionTime.getTime() + 60 * 60 * 1000);
+      if (session.sessionStatus === 'PENDING_CONFIRMATION' || (session.sessionStatus !== 'COMPLETED' && session.sessionStatus !== 'CANCELLED' && now > oneHourAfter)) {
+        pendingConfirmationCount++;
+      }
+    }
+
     // Build dashboard data
     const dashboardData = {
       todaySchedule: {
@@ -192,6 +212,7 @@ const getDashboardStats = async (req, res) => {
       summary: {
         newRecordings: recentSessions.filter((s) => s.therapyType === 'RECORDING').length,
         pendingReports: recentReports.length,
+        pendingConfirmations: pendingConfirmationCount,
       },
     };
 
