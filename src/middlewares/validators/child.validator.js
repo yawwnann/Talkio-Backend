@@ -37,6 +37,12 @@ const validate = (req, res, next) => {
   next();
 };
 
+const validateDeleteChild = [
+  param("id")
+    .isUUID()
+    .withMessage("Invalid child ID format"),
+];
+
 const validateUpdateChild = [
   param("id")
     .isUUID()
@@ -69,5 +75,6 @@ module.exports = {
   validateCreateChild,
   validateGetChild,
   validateUpdateChild,
+  validateDeleteChild,
   validate,
 };

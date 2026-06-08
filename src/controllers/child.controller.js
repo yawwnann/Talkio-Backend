@@ -105,9 +105,40 @@ const updateChild = async (req, res) => {
   }
 };
 
+const deleteChild = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if child exists and belongs to the parent
+    const existingChild = await prisma.child.findUnique({
+      where: { id },
+    });
+
+    if (!existingChild) {
+      return sendResponse(res, 404, "Child not found");
+    }
+
+    // Ensure only the owner parent or admin can delete
+    if (existingChild.parentId !== req.user.id && req.user.role !== "ADMIN") {
+      return sendResponse(res, 403, "Access denied. You can only delete your own children.");
+    }
+
+    // Delete child (cascade handles related records)
+    await prisma.child.delete({
+      where: { id },
+    });
+
+    return sendResponse(res, 200, "Child deleted successfully");
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Internal Server Error");
+  }
+};
+
 module.exports = {
   createChild,
   getChildren,
   getChildById,
   updateChild,
+  deleteChild,
 };

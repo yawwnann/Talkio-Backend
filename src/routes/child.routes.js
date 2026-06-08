@@ -9,6 +9,7 @@ const {
   validateCreateChild,
   validateGetChild,
   validateUpdateChild,
+  validateDeleteChild,
   validate,
 } = require("../middlewares/validators/child.validator");
 
@@ -34,6 +35,14 @@ router.put(
   validateUpdateChild,
   validate,
   childController.updateChild,
+);
+router.delete(
+  "/:id",
+  authenticateToken,
+  authorizeRoles("PARENT"),
+  validateDeleteChild,
+  validate,
+  childController.deleteChild,
 );
 
 module.exports = router;

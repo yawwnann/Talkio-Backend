@@ -58,7 +58,7 @@ model User {
 model Child {
   id              String            @id @default(uuid())
   parentId        String
-  parent          User              @relation(fields: [parentId], references: [id])
+  parent          User              @relation(fields: [parentId], references: [id], onDelete: Cascade)
   name            String
   dateOfBirth     DateTime
   gender          Gender
@@ -77,7 +77,7 @@ model Child {
 model Diagnosis {
   id             String         @id @default(uuid())
   childId        String
-  child          Child          @relation(fields: [childId], references: [id])
+  child          Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
   answers        Json           // Jawaban pertanyaan
   ageInMonths    Int            // Usia anak dalam bulan saat diagnosis
   ageCategory    String         // Kategori usia (Infant, Toddler, Preschool)
@@ -99,7 +99,7 @@ model Diagnosis {
 model TherapySession {
   id            String        @id @default(uuid())
   childId       String
-  child         Child         @relation(fields: [childId], references: [id])
+  child         Child         @relation(fields: [childId], references: [id], onDelete: Cascade)
   therapistId   String?
   therapist     User?         @relation("TherapistSessions", fields: [therapistId], references: [id])
   schedule      DateTime
@@ -118,7 +118,7 @@ model TherapySession {
 model GameLog {
   id        String   @id @default(uuid())
   childId   String
-  child     Child    @relation(fields: [childId], references: [id])
+  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
   gameScore Int
   duration  Int      // in seconds
   gameType  String
@@ -130,7 +130,7 @@ model GameLog {
 model ArticulationSession {
   id           String   @id @default(uuid())
   childId      String
-  child        Child    @relation(fields: [childId], references: [id])
+  child        Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
 
   // Latihan info
   targetWord   String   // "RUSUK", "RUMAH", dst
@@ -166,7 +166,7 @@ model ArticulationSession {
 model ProgressUpload {
   id                  String   @id @default(uuid())
   childId             String
-  child               Child    @relation(fields: [childId], references: [id])
+  child               Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
   fileUrl             String
   cloudinaryPublicId  String?
   parentNotes         String?
@@ -181,7 +181,7 @@ model ProgressUpload {
 model ProgressNote {
   id                 String   @id @default(uuid())
   childId            String
-  child              Child    @relation(fields: [childId], references: [id])
+  child              Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
   therapistId        String
   therapist          User     @relation(fields: [therapistId], references: [id])
   title              String
