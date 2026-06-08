@@ -65,7 +65,7 @@ function getSoundStatus(total, correctRate) {
   if (total >= 7 && correctRate >= 0.7) return "mastered";
   if (total >= 5 && correctRate >= 0.5) return "improving";
   if (total >= 5 && correctRate < 0.4) return "struggling";
-  if (total >= 3) return "practicing";
+  if (total >= 1) return "practicing";
   return "not_started";
 }
 
@@ -246,7 +246,7 @@ function processSoundRules(sound, s) {
   }
 
   // Rule 2: Good progress improving
-  if (s.total >= 5 && s.rate >= 50 && s.rate < 70) {
+  if (s.total >= 5 && s.rate >= 50) {
     return {
       sound,
       rule: "improving",
@@ -268,7 +268,18 @@ function processSoundRules(sound, s) {
     };
   }
 
-  // Rule 4: Started but not enough data
+  // Rule 4: Practicing (rate 40-49 with 5+ sessions)
+  if (s.total >= 5 && s.rate >= 40 && s.rate < 50) {
+    return {
+      sound,
+      rule: "practicing",
+      status: "practicing",
+      message: `Bunyi ${sound}: ${s.correct}/${s.total} benar. Lanjutkan latihan!`,
+      nextAction: "continue",
+    };
+  }
+
+  // Rule 5: Started but not enough data
   if (s.total >= 1 && s.total < 5) {
     return {
       sound,
