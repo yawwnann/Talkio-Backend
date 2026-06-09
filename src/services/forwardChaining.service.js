@@ -18,7 +18,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "first_word_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Perkembangan first_word menunjukkan hasil positif",
+      recommendation: "Perkembangan kata pertama menunjukkan hasil positif",
       ageRange: [
         10,
         18
@@ -38,7 +38,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "first_word_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Perkembangan first_word dalam tahap belajar, berikan stimulasi",
+      recommendation: "Perkembangan kata pertama dalam tahap belajar, berikan stimulasi",
       ageRange: [
         10,
         18
@@ -58,7 +58,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "first_word_kurang",
       confidence: 0.9,
       severity: 2,
-      recommendation: "Perkembangan first_word terlambat, segera konsultasikan",
+      recommendation: "Perkembangan kata pertama terlambat, segera konsultasikan",
       ageRange: [
         10,
         18
@@ -78,7 +78,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "imitate_sounds_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan imitate_sounds sangat baik dan sesuai usia",
+      recommendation: "Kemampuan meniru suara sangat baik dan sesuai usia",
       ageRange: [
         10,
         18
@@ -98,7 +98,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "imitate_sounds_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan imitate_sounds cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan meniru suara cukup, terus berikan stimulasi",
       ageRange: [
         10,
         18
@@ -119,7 +119,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "imitate_sounds_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan imitate_sounds kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan meniru suara kurang, perlu perhatian khusus",
       ageRange: [
         10,
         18
@@ -140,7 +140,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_12_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_12 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan jumlah kosa kata sangat baik dan sesuai usia",
       ageRange: [
         10,
         18
@@ -160,7 +160,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_12_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_12 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan jumlah kosa kata cukup, terus berikan stimulasi",
       ageRange: [
         10,
         18
@@ -180,7 +180,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_12_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan vocabulary_count_12 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan jumlah kosa kata kurang, perlu perhatian khusus",
       ageRange: [
         10,
         18
@@ -200,7 +200,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "name_response_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan name_response sangat baik dan sesuai usia",
+      recommendation: "Kemampuan respon terhadap panggilan nama sangat baik dan sesuai usia",
       ageRange: [
         10,
         18
@@ -220,7 +220,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "name_response_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan name_response cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan respon terhadap panggilan nama cukup, terus berikan stimulasi",
       ageRange: [
         10,
         18
@@ -241,7 +241,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "name_response_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan name_response kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan respon terhadap panggilan nama kurang, perlu perhatian khusus",
       ageRange: [
         10,
         18
@@ -261,7 +261,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "gesture_comm_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan gesture_comm sangat baik dan sesuai usia",
+      recommendation: "Kemampuan komunikasi dengan gerakan sangat baik dan sesuai usia",
       ageRange: [
         10,
         18
@@ -281,7 +281,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "gesture_comm_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan gesture_comm cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan komunikasi dengan gerakan cukup, terus berikan stimulasi",
       ageRange: [
         10,
         18
@@ -302,7 +302,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "gesture_comm_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan gesture_comm kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan komunikasi dengan gerakan kurang, perlu perhatian khusus",
       ageRange: [
         10,
         18
@@ -322,7 +322,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "understand_simple_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Perkembangan understand_simple menunjukkan hasil positif",
+      recommendation: "Perkembangan pemahaman perintah sederhana menunjukkan hasil positif",
       ageRange: [
         10,
         18
@@ -342,7 +342,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "understand_simple_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Perkembangan understand_simple dalam tahap belajar, berikan stimulasi",
+      recommendation: "Perkembangan pemahaman perintah sederhana dalam tahap belajar, berikan stimulasi",
       ageRange: [
         10,
         18
@@ -362,7 +362,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "understand_simple_kurang",
       confidence: 0.9,
       severity: 2,
-      recommendation: "Perkembangan understand_simple terlambat, segera konsultasikan",
+      recommendation: "Perkembangan pemahaman perintah sederhana terlambat, segera konsultasikan",
       ageRange: [
         10,
         18
@@ -382,7 +382,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "babbling_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan babbling sangat baik dan sesuai usia",
+      recommendation: "Kemampuan mengoceh sangat baik dan sesuai usia",
       ageRange: [
         10,
         18
@@ -402,7 +402,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "babbling_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan babbling cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan mengoceh cukup, terus berikan stimulasi",
       ageRange: [
         10,
         18
@@ -423,7 +423,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "babbling_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan babbling kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan mengoceh kurang, perlu perhatian khusus",
       ageRange: [
         10,
         18
@@ -443,7 +443,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "attention_sounds_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan attention_sounds sangat baik dan sesuai usia",
+      recommendation: "Kemampuan perhatian pada suara sangat baik dan sesuai usia",
       ageRange: [
         10,
         18
@@ -463,7 +463,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "attention_sounds_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan attention_sounds cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan perhatian pada suara cukup, terus berikan stimulasi",
       ageRange: [
         10,
         18
@@ -484,7 +484,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "attention_sounds_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan attention_sounds kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan perhatian pada suara kurang, perlu perhatian khusus",
       ageRange: [
         10,
         18
@@ -507,7 +507,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_24_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_24 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan jumlah kosa kata sangat baik dan sesuai usia",
       ageRange: [
         18,
         32
@@ -527,7 +527,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_24_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_24 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan jumlah kosa kata cukup, terus berikan stimulasi",
       ageRange: [
         18,
         32
@@ -547,7 +547,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_24_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan vocabulary_count_24 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan jumlah kosa kata kurang, perlu perhatian khusus",
       ageRange: [
         18,
         32
@@ -567,7 +567,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "two_word_phrase_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Perkembangan two_word_phrase menunjukkan hasil positif",
+      recommendation: "Perkembangan penggunaan frasa dua kata menunjukkan hasil positif",
       ageRange: [
         18,
         32
@@ -587,7 +587,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "two_word_phrase_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Perkembangan two_word_phrase dalam tahap belajar, berikan stimulasi",
+      recommendation: "Perkembangan penggunaan frasa dua kata dalam tahap belajar, berikan stimulasi",
       ageRange: [
         18,
         32
@@ -607,7 +607,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "two_word_phrase_kurang",
       confidence: 0.9,
       severity: 2,
-      recommendation: "Perkembangan two_word_phrase terlambat, segera konsultasikan",
+      recommendation: "Perkembangan penggunaan frasa dua kata terlambat, segera konsultasikan",
       ageRange: [
         18,
         32
@@ -627,7 +627,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_24_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_24 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan kejelasan bicara sangat baik dan sesuai usia",
       ageRange: [
         18,
         32
@@ -647,7 +647,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_24_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_24 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan kejelasan bicara cukup, terus berikan stimulasi",
       ageRange: [
         18,
         32
@@ -668,7 +668,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_24_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan speech_clarity_24 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan kejelasan bicara kurang, perlu perhatian khusus",
       ageRange: [
         18,
         32
@@ -688,7 +688,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "asking_what_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan asking_what sangat baik dan sesuai usia",
+      recommendation: "Kemampuan bertanya menggunakan kata 'apa' sangat baik dan sesuai usia",
       ageRange: [
         18,
         32
@@ -708,7 +708,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "asking_what_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan asking_what cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan bertanya menggunakan kata 'apa' cukup, terus berikan stimulasi",
       ageRange: [
         18,
         32
@@ -729,7 +729,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "asking_what_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan asking_what kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan bertanya menggunakan kata 'apa' kurang, perlu perhatian khusus",
       ageRange: [
         18,
         32
@@ -749,7 +749,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "follow_commands_two_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Perkembangan follow_commands_two menunjukkan hasil positif",
+      recommendation: "Perkembangan mengikuti dua perintah sekaligus menunjukkan hasil positif",
       ageRange: [
         18,
         32
@@ -769,7 +769,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "follow_commands_two_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Perkembangan follow_commands_two dalam tahap belajar, berikan stimulasi",
+      recommendation: "Perkembangan mengikuti dua perintah sekaligus dalam tahap belajar, berikan stimulasi",
       ageRange: [
         18,
         32
@@ -789,7 +789,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "follow_commands_two_kurang",
       confidence: 0.9,
       severity: 2,
-      recommendation: "Perkembangan follow_commands_two terlambat, segera konsultasikan",
+      recommendation: "Perkembangan mengikuti dua perintah sekaligus terlambat, segera konsultasikan",
       ageRange: [
         18,
         32
@@ -809,7 +809,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "point_body_parts_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan point_body_parts sangat baik dan sesuai usia",
+      recommendation: "Kemampuan menunjuk bagian tubuh sangat baik dan sesuai usia",
       ageRange: [
         18,
         32
@@ -829,7 +829,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "point_body_parts_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan point_body_parts cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan menunjuk bagian tubuh cukup, terus berikan stimulasi",
       ageRange: [
         18,
         32
@@ -850,7 +850,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "point_body_parts_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan point_body_parts kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan menunjuk bagian tubuh kurang, perlu perhatian khusus",
       ageRange: [
         18,
         32
@@ -870,7 +870,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "uses_i_me_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Perkembangan uses_i_me menunjukkan hasil positif",
+      recommendation: "Perkembangan penggunaan kata 'saya' atau 'aku' menunjukkan hasil positif",
       ageRange: [
         18,
         32
@@ -890,7 +890,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "uses_i_me_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Perkembangan uses_i_me dalam tahap belajar, berikan stimulasi",
+      recommendation: "Perkembangan penggunaan kata 'saya' atau 'aku' dalam tahap belajar, berikan stimulasi",
       ageRange: [
         18,
         32
@@ -910,7 +910,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "uses_i_me_kurang",
       confidence: 0.9,
       severity: 2,
-      recommendation: "Perkembangan uses_i_me terlambat, segera konsultasikan",
+      recommendation: "Perkembangan penggunaan kata 'saya' atau 'aku' terlambat, segera konsultasikan",
       ageRange: [
         18,
         32
@@ -930,7 +930,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "enjoy_stories_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan enjoy_stories sangat baik dan sesuai usia",
+      recommendation: "Kemampuan ketertarikan pada cerita sangat baik dan sesuai usia",
       ageRange: [
         18,
         32
@@ -950,7 +950,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "enjoy_stories_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan enjoy_stories cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan ketertarikan pada cerita cukup, terus berikan stimulasi",
       ageRange: [
         18,
         32
@@ -971,7 +971,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "enjoy_stories_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan enjoy_stories kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan ketertarikan pada cerita kurang, perlu perhatian khusus",
       ageRange: [
         18,
         32
@@ -994,7 +994,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_36_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_36 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan jumlah kosa kata sangat baik dan sesuai usia",
       ageRange: [
         32,
         44
@@ -1014,7 +1014,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_36_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_36 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan jumlah kosa kata cukup, terus berikan stimulasi",
       ageRange: [
         32,
         44
@@ -1034,7 +1034,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_36_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan vocabulary_count_36 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan jumlah kosa kata kurang, perlu perhatian khusus",
       ageRange: [
         32,
         44
@@ -1054,7 +1054,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "three_word_sentence_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan three_word_sentence sangat baik dan sesuai usia",
+      recommendation: "Kemampuan penggunaan kalimat tiga kata sangat baik dan sesuai usia",
       ageRange: [
         32,
         44
@@ -1074,7 +1074,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "three_word_sentence_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan three_word_sentence cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan penggunaan kalimat tiga kata cukup, terus berikan stimulasi",
       ageRange: [
         32,
         44
@@ -1095,7 +1095,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "three_word_sentence_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan three_word_sentence kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan penggunaan kalimat tiga kata kurang, perlu perhatian khusus",
       ageRange: [
         32,
         44
@@ -1115,7 +1115,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_36_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_36 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan kejelasan bicara sangat baik dan sesuai usia",
       ageRange: [
         32,
         44
@@ -1135,7 +1135,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_36_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_36 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan kejelasan bicara cukup, terus berikan stimulasi",
       ageRange: [
         32,
         44
@@ -1156,7 +1156,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_36_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan speech_clarity_36 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan kejelasan bicara kurang, perlu perhatian khusus",
       ageRange: [
         32,
         44
@@ -1482,7 +1482,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_48_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_48 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan jumlah kosa kata sangat baik dan sesuai usia",
       ageRange: [
         44,
         56
@@ -1502,7 +1502,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_48_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_48 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan jumlah kosa kata cukup, terus berikan stimulasi",
       ageRange: [
         44,
         56
@@ -1522,7 +1522,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_48_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan vocabulary_count_48 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan jumlah kosa kata kurang, perlu perhatian khusus",
       ageRange: [
         44,
         56
@@ -1603,7 +1603,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_48_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_48 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan kejelasan bicara sangat baik dan sesuai usia",
       ageRange: [
         44,
         56
@@ -1623,7 +1623,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_48_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_48 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan kejelasan bicara cukup, terus berikan stimulasi",
       ageRange: [
         44,
         56
@@ -1644,7 +1644,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_48_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan speech_clarity_48 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan kejelasan bicara kurang, perlu perhatian khusus",
       ageRange: [
         44,
         56
@@ -1969,7 +1969,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_60_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_60 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan kosa kata sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -1989,7 +1989,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_60_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan vocabulary_count_60 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan kosa kata cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2009,7 +2009,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "vocabulary_count_60_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan vocabulary_count_60 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan kosa kata kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
@@ -2029,7 +2029,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "story_structure_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan story_structure sangat baik dan sesuai usia",
+      recommendation: "Kemampuan menyusun struktur cerita sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -2049,7 +2049,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "story_structure_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan story_structure cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan menyusun struktur cerita cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2070,7 +2070,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "story_structure_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan story_structure kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan menyusun struktur cerita kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
@@ -2090,7 +2090,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_60_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_60 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan kejelasan bicara sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -2110,7 +2110,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_60_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan speech_clarity_60 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan kejelasan bicara cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2131,7 +2131,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_clarity_60_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan speech_clarity_60 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan kejelasan bicara kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
@@ -2151,7 +2151,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "articulation_difficulty_60_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan articulation_difficulty_60 sangat baik dan sesuai usia",
+      recommendation: "Kemampuan artikulasi sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -2171,7 +2171,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "articulation_difficulty_60_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan articulation_difficulty_60 cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan artikulasi cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2192,7 +2192,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "articulation_difficulty_60_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan articulation_difficulty_60 kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan artikulasi kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
@@ -2212,7 +2212,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "follow_rules_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan follow_rules sangat baik dan sesuai usia",
+      recommendation: "Kemampuan mengikuti aturan sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -2232,7 +2232,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "follow_rules_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan follow_rules cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan mengikuti aturan cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2253,7 +2253,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "follow_rules_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan follow_rules kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan mengikuti aturan kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
@@ -2273,7 +2273,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "complex_questions_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan complex_questions sangat baik dan sesuai usia",
+      recommendation: "Kemampuan menjawab pertanyaan kompleks sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -2293,7 +2293,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "complex_questions_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan complex_questions cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan menjawab pertanyaan kompleks cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2314,7 +2314,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "complex_questions_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan complex_questions kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan menjawab pertanyaan kompleks kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
@@ -2334,7 +2334,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_comparison_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan speech_comparison sangat baik dan sesuai usia",
+      recommendation: "Kemampuan kemampuan bicara dibandingkan sebaya sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -2354,7 +2354,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_comparison_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan speech_comparison cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan kemampuan bicara dibandingkan sebaya cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2375,7 +2375,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "speech_comparison_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan speech_comparison kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan kemampuan bicara dibandingkan sebaya kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
@@ -2395,7 +2395,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "express_feelings_baik",
       confidence: 0.8,
       severity: 0,
-      recommendation: "Kemampuan express_feelings sangat baik dan sesuai usia",
+      recommendation: "Kemampuan mengekspresikan perasaan sangat baik dan sesuai usia",
       ageRange: [
         56,
         999
@@ -2415,7 +2415,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "express_feelings_cukup",
       confidence: 0.7,
       severity: 0,
-      recommendation: "Kemampuan express_feelings cukup, terus berikan stimulasi",
+      recommendation: "Kemampuan mengekspresikan perasaan cukup, terus berikan stimulasi",
       ageRange: [
         56,
         999
@@ -2436,7 +2436,7 @@ const KNOWLEDGE_BASE = {
       conclusion: "express_feelings_kurang",
       confidence: 0.85,
       severity: 2,
-      recommendation: "Kemampuan express_feelings kurang, perlu perhatian khusus",
+      recommendation: "Kemampuan mengekspresikan perasaan kurang, perlu perhatian khusus",
       ageRange: [
         56,
         999
