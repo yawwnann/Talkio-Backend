@@ -2861,15 +2861,6 @@ class ForwardChainingEngine {
   _generateRecommendations(derivedFacts, ageInMonths, riskLevel, triggeredRules) {
     const recommendations = [];
 
-    // Add specific rule recommendations first
-    if (triggeredRules && triggeredRules.length > 0) {
-      for (const ruleId of triggeredRules) {
-        const rule = this.rules.find(r => r.id === ruleId);
-        if (rule && rule.recommendation && !recommendations.includes(rule.recommendation)) {
-          recommendations.push(rule.recommendation);
-        }
-      }
-    }
 
     if (riskLevel === 'HIGH') {
       recommendations.push('Disarankan segera berkonsultasi dengan terapis wicara');
