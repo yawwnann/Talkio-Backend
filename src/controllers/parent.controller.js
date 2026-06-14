@@ -1,7 +1,7 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const midtransClient = require("midtrans-client");
-const { generatePatientReport } = require("../utils/pdf-generator");
+const { generatePatientReport, generateSingleProgressReport } = require("../utils/pdf-generator");
 const fs = require("fs");
 const { formatDateYmdInTimeZone } = require("../utils/date-utils");
 
@@ -300,28 +300,33 @@ const getPayments = async (req, res) => {
 const downloadPdfReport = async (req, res) => {
   try {
     const parentId = req.user.id;
-    const { childId } = req.params;
+    const { reportId } = req.params;
 
-    // Verify child belongs to parent
-    const child = await prisma.child.findFirst({
+    // Verify report belongs to parent's child
+    const report = await prisma.progressNote.findFirst({
       where: {
-        id: childId,
-        parentId: parentId,
+        id: reportId,
+        child: {
+          parentId: parentId,
+        },
       },
+      include: {
+        child: true
+      }
     });
 
-    if (!child) {
-      return sendResponse(res, 404, "Anak tidak ditemukan atau bukan milik Anda");
+    if (!report) {
+      return sendResponse(res, 404, "Laporan tidak ditemukan atau bukan milik Anda");
     }
 
     // Generate PDF
-    const pdfPath = await generatePatientReport(childId);
+    const pdfPath = await generateSingleProgressReport(reportId);
 
     if (!fs.existsSync(pdfPath)) {
       return sendResponse(res, 500, "Gagal membuat laporan PDF");
     }
 
-    res.download(pdfPath, `Laporan-Perkembangan-${child.name}-${Date.now()}.pdf`, (err) => {
+    res.download(pdfPath, `Laporan-Perkembangan-${report.child.name}-${Date.now()}.pdf`, (err) => {
       if (err) {
         console.error("PDF download error:", err);
         return sendResponse(res, 500, "Gagal mengunduh PDF");

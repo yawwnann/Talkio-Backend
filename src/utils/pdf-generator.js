@@ -547,4 +547,130 @@ function formatDuration(seconds) {
   return `${minutes} menit ${secs} detik`;
 }
 
-module.exports = { generatePatientReport };
+/**
+ * Generate PDF for a single progress report (based on ID)
+ */
+const generateSingleProgressReport = async (reportId) => {
+  const report = await prisma.progressNote.findUnique({
+    where: { id: reportId },
+    include: {
+      child: true,
+      therapist: true,
+    },
+  });
+
+  if (!report) throw new Error("Report not found");
+
+  const doc = new PDFDocument({
+    size: "A4",
+    margin: 50,
+    info: {
+      Title: `Laporan Perkembangan - ${report.child.name}`,
+      Author: "Pondok Terapi Bicara",
+      Subject: "Laporan Perkembangan Anak",
+    },
+  });
+
+  const fileName = `laporan-${reportId}-${Date.now()}.pdf`;
+  const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+  const filePath = isVercel
+    ? path.join("/tmp", "uploads", "reports", fileName)
+    : path.join(__dirname, "..", "..", "uploads", "reports", fileName);
+
+  const reportsDir = path.dirname(filePath);
+  if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
+
+  const stream = fs.createWriteStream(filePath);
+  doc.pipe(stream);
+
+  // Formatting helpers
+  const drawLine = () => {
+    doc.moveDown(1);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor(COLORS.border).lineWidth(1).stroke();
+    doc.moveDown(1);
+  };
+
+  doc.fontSize(16).font("Helvetica-Bold").fillColor(COLORS.dark).text("LAPORAN PERKEMBANGAN ANAK", { align: "center" });
+  doc.moveDown(2);
+
+  doc.fontSize(12).font("Helvetica");
+  const age = calculateAge(report.child.dateOfBirth);
+  // Manual format date to avoid locale issues on servers
+  const dateObj = new Date(report.date);
+  const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const dateStr = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+  
+  doc.text(`Nama Anak     : ${report.child.name}`);
+  doc.text(`Usia          : ${age}`);
+  doc.text(`Tanggal       : ${dateStr}`);
+  doc.text(`Terapis       : ${report.therapist.name}`);
+
+  drawLine();
+
+  doc.fontSize(12).font("Helvetica-Bold").text("HASIL PERKEMBANGAN");
+  doc.moveDown(0.5);
+  doc.fontSize(11).font("Helvetica");
+  
+  // Content
+  if (report.content) {
+    const contentLines = report.content.split('\\n').filter(l => l.trim().length > 0);
+    contentLines.forEach(line => {
+      doc.text(`✓ ${line.trim().replace(/^[-•]\\s*/, '')}`);
+      doc.moveDown(0.5);
+    });
+  }
+
+  // Barriers
+  if (report.barriers) {
+    const barrierLines = report.barriers.split('\\n').filter(l => l.trim().length > 0);
+    barrierLines.forEach(line => {
+      doc.fillColor(COLORS.warning).text(`⚠ ${line.trim().replace(/^[-•]\\s*/, '')}`);
+      doc.moveDown(0.5);
+    });
+    doc.fillColor(COLORS.dark);
+  }
+
+  drawLine();
+
+  doc.fontSize(12).font("Helvetica-Bold").text("KESIMPULAN");
+  doc.moveDown(0.5);
+  doc.fontSize(11).font("Helvetica");
+  doc.text("Perkembangan kemampuan bicara anak mengalami peningkatan dibandingkan evaluasi sebelumnya.");
+  
+  drawLine();
+
+  doc.fontSize(12).font("Helvetica-Bold").text("SARAN UNTUK ORANG TUA");
+  doc.moveDown(0.5);
+  doc.fontSize(11).font("Helvetica");
+  
+  if (report.parentExercises) {
+    let exercises = [];
+    try {
+      exercises = JSON.parse(report.parentExercises);
+      if (!Array.isArray(exercises)) {
+        exercises = report.parentExercises.split('\\n');
+      }
+    } catch(e) {
+      exercises = report.parentExercises.split('\\n');
+    }
+    exercises.forEach(ex => {
+      if (ex && ex.trim()) {
+        doc.text(`• ${ex.trim().replace(/^[-•]\\s*/, '')}`);
+        doc.moveDown(0.5);
+      }
+    });
+  } else {
+    doc.text("• Lanjutkan stimulasi di rumah sesuai anjuran terapis.");
+  }
+
+  drawLine();
+
+  doc.end();
+
+  return new Promise((resolve, reject) => {
+    stream.on("finish", () => resolve(filePath));
+    stream.on("error", reject);
+  });
+};
+
+module.exports = { generatePatientReport, generateSingleProgressReport };

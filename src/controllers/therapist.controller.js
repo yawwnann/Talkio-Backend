@@ -1,6 +1,6 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
-const { generatePatientReport } = require("../utils/pdf-generator");
+const { generatePatientReport, generateSingleProgressReport } = require("../utils/pdf-generator");
 const fs = require("fs");
 const { isWeekendIsoDate, formatDateYmdInTimeZone } = require("../utils/date-utils");
 const {
@@ -103,17 +103,18 @@ const generateReport = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verify child exists
-    const child = await prisma.child.findUnique({
+    // Verify report exists
+    const report = await prisma.progressNote.findUnique({
       where: { id },
+      include: { child: true }
     });
 
-    if (!child) {
-      return sendResponse(res, 404, "Child not found");
+    if (!report) {
+      return sendResponse(res, 404, "Report not found");
     }
 
     // Generate PDF
-    const pdfPath = await generatePatientReport(id);
+    const pdfPath = await generateSingleProgressReport(id);
 
     // Check if file exists
     if (!fs.existsSync(pdfPath)) {
@@ -121,7 +122,7 @@ const generateReport = async (req, res) => {
     }
 
     // Send file as download
-    res.download(pdfPath, `report-${child.name}-${Date.now()}.pdf`, (err) => {
+    res.download(pdfPath, `report-${report.child.name}-${Date.now()}.pdf`, (err) => {
       if (err) {
         console.error("Download error:", err);
         return sendResponse(res, 500, "Failed to download report");
