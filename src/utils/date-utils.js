@@ -21,8 +21,21 @@ function isWeekendIsoDate(isoString) {
   return weekday === 0 || weekday === 6;
 }
 
+function formatDateYmdInTimeZone(date, timeZone = "Asia/Jakarta") {
+  const value = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(value.getTime())) return null;
+
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
+}
+
 module.exports = {
   parseYmdFromIsoString,
   getUtcWeekdayFromYmd,
   isWeekendIsoDate,
+  formatDateYmdInTimeZone,
 };

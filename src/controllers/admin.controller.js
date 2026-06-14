@@ -3,6 +3,7 @@ const { sendResponse } = require("../utils/response");
 const fs = require("fs").promises;
 const path = require("path");
 const { sendNotificationToAllAdmins } = require("../services/notification.service");
+const { formatDateYmdInTimeZone } = require("../utils/date-utils");
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -531,8 +532,8 @@ const getAdminReports = async (req, res) => {
       title: n.title,
       content: n.content,
       status: n.status,
-      date: n.date.toISOString().split("T")[0],
-      createdAt: n.createdAt.toISOString(),
+      date: formatDateYmdInTimeZone(n.date) || "-",
+      createdAt: formatDateYmdInTimeZone(n.createdAt) || "-",
     }));
 
     return sendResponse(res, 200, "Reports fetched", {

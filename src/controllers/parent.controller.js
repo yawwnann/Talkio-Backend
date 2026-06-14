@@ -3,6 +3,7 @@ const { sendResponse } = require("../utils/response");
 const midtransClient = require("midtrans-client");
 const { generatePatientReport } = require("../utils/pdf-generator");
 const fs = require("fs");
+const { formatDateYmdInTimeZone } = require("../utils/date-utils");
 
 // Get all reports for parent's children
 const getReports = async (req, res) => {
@@ -58,8 +59,8 @@ const getReports = async (req, res) => {
       title: note.title,
       content: note.content,
       status: note.status,
-      date: note.date.toISOString().split("T")[0],
-      createdAt: note.createdAt.toISOString(),
+      date: formatDateYmdInTimeZone(note.date) || "-",
+      createdAt: formatDateYmdInTimeZone(note.createdAt) || "-",
     }));
 
     return sendResponse(res, 200, "Reports fetched successfully", reportList);

@@ -2,7 +2,7 @@ const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const { generatePatientReport } = require("../utils/pdf-generator");
 const fs = require("fs");
-const { isWeekendIsoDate } = require("../utils/date-utils");
+const { isWeekendIsoDate, formatDateYmdInTimeZone } = require("../utils/date-utils");
 const {
   WORK_START_HOUR_WIB,
   WORK_END_HOUR_WIB,
@@ -176,7 +176,7 @@ const getReportHistory = async (req, res) => {
         patient_avatar: "",
         status: session.isActive ? "SENT" : "DRAFT",
         summary: `Sesi ${session.therapyType} - ${session.isActive ? "Aktif" : "Tidak Aktif"}`,
-        date: session.schedule.toISOString().split("T")[0],
+        date: formatDateYmdInTimeZone(session.schedule) || "-",
         terapis_id: therapistId,
       }));
 
@@ -192,7 +192,7 @@ const getReportHistory = async (req, res) => {
         patient_avatar: "",
         status: note.status || "DRAFT",  // Use the actual status from database
         summary: note.content.substring(0, 100) + (note.content.length > 100 ? "..." : ""),
-        date: note.date.toISOString().split("T")[0],
+        date: formatDateYmdInTimeZone(note.date) || "-",
         terapis_id: therapistId,
       };
     });
