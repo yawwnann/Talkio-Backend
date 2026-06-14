@@ -3,7 +3,7 @@ const { sendResponse } = require("../utils/response");
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const token = (authHeader && authHeader.split(" ")[1]) || req.query.token;
 
   if (!token) {
     return sendResponse(res, 401, "Access denied. No token provided.");

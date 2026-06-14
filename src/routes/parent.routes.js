@@ -38,6 +38,14 @@ router.get(
   parentController.getPayments,
 );
 
+// Download PDF report for a child
+router.get(
+  "/report/pdf/:childId",
+  authenticateToken,
+  authorizeRoles("PARENT"),
+  parentController.downloadPdfReport,
+);
+
 
 
 module.exports = router;

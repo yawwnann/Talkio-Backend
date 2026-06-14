@@ -551,8 +551,8 @@ const createTherapistReview = async (req, res) => {
     const parentId = req.user.id;
     const { therapistId, rating, developmentTime, comment } = req.body;
 
-    if (!therapistId || rating === undefined || !developmentTime || !comment) {
-      return sendResponse(res, 400, "All fields (therapistId, rating, developmentTime, comment) are required");
+    if (!therapistId || rating === undefined || !developmentTime) {
+      return sendResponse(res, 400, "Fields therapistId, rating, and developmentTime are required");
     }
 
     // Verify therapist exists
@@ -599,7 +599,7 @@ const createTherapistReview = async (req, res) => {
         data: {
           rating: parseInt(rating),
           developmentTime,
-          comment,
+          comment: comment || "",
         },
       });
     } else {
@@ -610,7 +610,7 @@ const createTherapistReview = async (req, res) => {
           therapistId,
           rating: parseInt(rating),
           developmentTime,
-          comment,
+          comment: comment || "",
         },
       });
     }

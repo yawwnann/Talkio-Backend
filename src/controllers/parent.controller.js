@@ -1,6 +1,8 @@
 const prisma = require("../utils/prisma");
 const { sendResponse } = require("../utils/response");
 const midtransClient = require("midtrans-client");
+const { generatePatientReport } = require("../utils/pdf-generator");
+const fs = require("fs");
 
 // Get all reports for parent's children
 const getReports = async (req, res) => {
@@ -293,9 +295,47 @@ const getPayments = async (req, res) => {
   }
 };
 
+// Download PDF report for parent's child
+const downloadPdfReport = async (req, res) => {
+  try {
+    const parentId = req.user.id;
+    const { childId } = req.params;
+
+    // Verify child belongs to parent
+    const child = await prisma.child.findFirst({
+      where: {
+        id: childId,
+        parentId: parentId,
+      },
+    });
+
+    if (!child) {
+      return sendResponse(res, 404, "Anak tidak ditemukan atau bukan milik Anda");
+    }
+
+    // Generate PDF
+    const pdfPath = await generatePatientReport(childId);
+
+    if (!fs.existsSync(pdfPath)) {
+      return sendResponse(res, 500, "Gagal membuat laporan PDF");
+    }
+
+    res.download(pdfPath, `Laporan-Perkembangan-${child.name}-${Date.now()}.pdf`, (err) => {
+      if (err) {
+        console.error("PDF download error:", err);
+        return sendResponse(res, 500, "Gagal mengunduh PDF");
+      }
+    });
+  } catch (error) {
+    console.error("Download PDF error:", error);
+    return sendResponse(res, 500, "Gagal membuat laporan PDF");
+  }
+};
+
 module.exports = {
   getReports,
   getReportDetail,
   getSchedule,
   getPayments,
+  downloadPdfReport,
 };
