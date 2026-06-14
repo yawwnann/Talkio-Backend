@@ -27,7 +27,7 @@ const generatePatientReport = async (childId) => {
   const child = await prisma.child.findUnique({
     where: { id: childId },
     include: {
-      parent: { select: { name: true, email: true, phone: true } },
+      parent: { select: { name: true, email: true } },
       diagnoses: { orderBy: { createdAt: "desc" } },
       therapySessions: {
         include: { therapist: { select: { name: true, email: true } } },
@@ -220,8 +220,7 @@ const generatePatientReport = async (childId) => {
   drawInfoRow("Tanggal Lahir", new Date(child.dateOfBirth).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" }));
   drawInfoRow("Jenis Kelamin", child.gender === "MALE" ? "Laki-laki" : "Perempuan");
   drawInfoRow("Orang Tua", child.parent?.name || "-");
-  drawInfoRow("Email Orang Tua", child.parent?.email || "-");
-  if (child.parent?.phone) drawInfoRow("No. Telepon", child.parent.phone);
+  if (child.parent?.email) drawInfoRow("Email Orang Tua", child.parent.email);
 
   // ---- DIAGNOSIS SECTION ----
   drawSectionTitle("RIWAYAT DIAGNOSIS");
