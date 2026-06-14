@@ -40,7 +40,7 @@ router.get(
 
 // Download PDF report for a child
 router.get(
-  "/report/pdf/:childId",
+  "/report/pdf/:reportId",
   authenticateToken,
   authorizeRoles("PARENT"),
   parentController.downloadPdfReport,
