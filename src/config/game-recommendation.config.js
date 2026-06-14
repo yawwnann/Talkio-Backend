@@ -48,6 +48,29 @@ module.exports = [
         gameType: "Latihan Artikulasi",
         params: { rounds: 6, hintMode: "audio" },
       },
+      {
+        gameType: "Kata Bergambar",
+        params: { rounds: 6, hintMode: "visual" },
+      },
+    ],
+  },
+  {
+    label: "48–60 months",
+    minMonths: 48,
+    maxMonths: 60,
+    games: [
+      {
+        gameType: "Latihan Artikulasi",
+        params: { rounds: 8, hintMode: "audio" },
+      },
+      {
+        gameType: "Tebak Suara",
+        params: { choicesCount: 4, rounds: 8, hintMode: "audio" },
+      },
+      {
+        gameType: "Suara Binatang",
+        params: { choicesCount: 4, rounds: 8, hintMode: "audio" },
+      },
     ],
   },
 ];
