@@ -29,6 +29,10 @@ const generatePatientReport = async (childId) => {
     include: {
       parent: { select: { name: true, email: true } },
       diagnoses: { orderBy: { createdAt: "desc" } },
+      progressNotes: {
+        orderBy: { date: "desc" },
+        take: 10,
+      },
       therapySessions: {
         include: { therapist: { select: { name: true, email: true } } },
         orderBy: { schedule: "desc" },
@@ -118,6 +122,79 @@ const generatePatientReport = async (childId) => {
     doc.fontSize(10).fillColor(COLORS.dark).font("Helvetica-Bold");
     doc.text(value || "-", margin + labelWidth, yPos, { width: valWidth, align: "left" });
     yPos += 18;
+  }
+
+  function parseParentExercises(rawExercises) {
+    if (!rawExercises) return [];
+    if (Array.isArray(rawExercises)) {
+      return rawExercises.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof rawExercises === "string") {
+      const normalized = rawExercises.trim();
+      if (!normalized) return [];
+
+      try {
+        const parsed = JSON.parse(normalized);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item) => String(item).trim()).filter(Boolean);
+        }
+        if (typeof parsed === "string" && parsed.trim()) {
+          return [parsed.trim()];
+        }
+      } catch (_err) {
+        // Fall through to plain-text parsing.
+      }
+
+      return normalized
+        .split(/\r?\n|;\s*|•\s*/g)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  function drawWrappedBlock(label, value, opts = {}) {
+    const fontSize = opts.fontSize || 9;
+    const labelColor = opts.labelColor || COLORS.medium;
+    const textColor = opts.textColor || COLORS.dark;
+    const prefix = opts.prefix || "";
+    const width = contentWidth - 8;
+    const text = value || "-";
+
+    checkPageBreak(40);
+    doc.fontSize(fontSize).fillColor(labelColor).font("Helvetica-Bold");
+    doc.text(label, margin + 4, yPos, { width });
+    yPos += fontSize + 3;
+
+    const body = prefix ? `${prefix}${text}` : text;
+    const bodyHeight = doc.heightOfString(body, { width });
+    checkPageBreak(bodyHeight + 18);
+    doc.fontSize(fontSize).fillColor(textColor).font("Helvetica");
+    doc.text(body, margin + 4, yPos, { width });
+    yPos += bodyHeight + 10;
+    doc.fillColor(COLORS.dark);
+  }
+
+  function drawExerciseList(exercises) {
+    const items = parseParentExercises(exercises);
+    if (items.length === 0) {
+      doc.fontSize(9).fillColor(COLORS.light).font("Helvetica-Oblique");
+      doc.text("Belum ada latihan di rumah", margin + 4, yPos, { width: contentWidth - 8 });
+      yPos += 18;
+      doc.fillColor(COLORS.dark);
+      return;
+    }
+
+    items.forEach((exercise, index) => {
+      const line = `${index + 1}. ${exercise}`;
+      const height = doc.heightOfString(line, { width: contentWidth - 20 });
+      checkPageBreak(height + 14);
+      doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
+      doc.text(line, margin + 14, yPos, { width: contentWidth - 20 });
+      yPos += height + 6;
+    });
   }
 
   function drawTableHeader(headers) {
@@ -263,6 +340,90 @@ const generatePatientReport = async (childId) => {
   } else {
     doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
     doc.text("Belum ada riwayat sesi terapi", margin, yPos);
+    yPos += 24;
+    doc.fillColor(COLORS.dark);
+  }
+
+  // ---- LAPORAN TERAPI & LATIHAN DI RUMAH ----
+  drawSectionTitle("LAPORAN TERAPI & LATIHAN DI RUMAH");
+
+  if (child.progressNotes.length > 0) {
+    child.progressNotes.forEach((note, i) => {
+      const header = `${i + 1}. ${note.title || "Laporan Perkembangan"}  —  ${new Date(note.date).toLocaleDateString("id-ID", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })}`;
+
+      const headerHeight = doc.heightOfString(header, { width: contentWidth - 8 });
+      checkPageBreak(headerHeight + 22);
+
+      doc.rect(margin, yPos, contentWidth, 1).fill(COLORS.border);
+      yPos += 6;
+
+      doc.fontSize(10).fillColor(COLORS.dark).font("Helvetica-Bold");
+      doc.text(header, margin + 4, yPos, { width: contentWidth - 8 });
+      yPos += headerHeight + 8;
+
+      if (note.status) {
+        drawInfoRow("Status", note.status, { labelWidth: 120 });
+      }
+
+      if (note.sessionDate) {
+        drawInfoRow(
+          "Tanggal Sesi",
+          new Date(note.sessionDate).toLocaleDateString("id-ID", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+          { labelWidth: 120 },
+        );
+      }
+
+      if (note.content) {
+        drawWrappedBlock("Ringkasan Progress", note.content);
+      }
+
+      if (note.barriers) {
+        drawWrappedBlock("Hambatan", note.barriers);
+      }
+
+      const exercises = parseParentExercises(note.parentExercises);
+      if (exercises.length > 0) {
+        checkPageBreak(40);
+        doc.fontSize(9).fillColor(COLORS.medium).font("Helvetica-Bold");
+        doc.text("Latihan di Rumah", margin + 4, yPos, { width: contentWidth - 8 });
+        yPos += 14;
+        drawExerciseList(exercises);
+      } else {
+        checkPageBreak(24);
+        doc.fontSize(9).fillColor(COLORS.light).font("Helvetica-Oblique");
+        doc.text("Latihan di rumah belum diisi pada laporan ini.", margin + 4, yPos, {
+          width: contentWidth - 8,
+        });
+        yPos += 16;
+      }
+
+      const scoreParts = [];
+      if (note.speechClarity !== null && note.speechClarity !== undefined) {
+        scoreParts.push(`Kejelasan Bicara: ${note.speechClarity}`);
+      }
+      if (note.vocabulary !== null && note.vocabulary !== undefined) {
+        scoreParts.push(`Kosakata: ${note.vocabulary}`);
+      }
+      if (note.socialInteraction !== null && note.socialInteraction !== undefined) {
+        scoreParts.push(`Interaksi Sosial: ${note.socialInteraction}`);
+      }
+      if (scoreParts.length > 0) {
+        drawWrappedBlock("Skor Evaluasi", scoreParts.join(" | "));
+      }
+
+      yPos += 4;
+    });
+  } else {
+    doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
+    doc.text("Belum ada laporan terapi", margin, yPos);
     yPos += 24;
     doc.fillColor(COLORS.dark);
   }
