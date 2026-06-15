@@ -583,65 +583,91 @@ const generateSingleProgressReport = async (reportId) => {
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
 
-  // Formatting helpers
-  const drawLine = () => {
-    doc.moveDown(1);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor(COLORS.border).lineWidth(1).stroke();
-    doc.moveDown(1);
-  };
+  const pageWidth = doc.page.width;
+  const pageHeight = doc.page.height;
+  const contentWidth = pageWidth - 100;
+  let yPos = 50;
 
-  doc.fontSize(16).font("Helvetica-Bold").fillColor(COLORS.dark).text("LAPORAN PERKEMBANGAN ANAK", { align: "center" });
-  doc.moveDown(2);
+  // Header Bar
+  doc.rect(0, 0, pageWidth, 12).fill(COLORS.primary);
+  doc.rect(0, 12, pageWidth, 3).fill(COLORS.accent);
+  
+  yPos = 50;
 
-  doc.fontSize(12).font("Helvetica");
+  // Title
+  doc.fontSize(20).font("Helvetica-Bold").fillColor(COLORS.primary).text("LAPORAN PERKEMBANGAN ANAK", 50, yPos, { align: "center" });
+  yPos += 30;
+
+  // Info Box
+  doc.rect(50, yPos, contentWidth, 90).fill(COLORS.bgBlue);
+  
+  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
   const age = calculateAge(report.child.dateOfBirth);
-  // Manual format date to avoid locale issues on servers
   const dateObj = new Date(report.date);
   const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
   const dateStr = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
   
-  doc.text(`Nama Anak     : ${report.child.name}`);
-  doc.text(`Usia          : ${age}`);
-  doc.text(`Tanggal       : ${dateStr}`);
-  doc.text(`Terapis       : ${report.therapist.name}`);
-
-  drawLine();
-
-  doc.fontSize(12).font("Helvetica-Bold").text("HASIL PERKEMBANGAN");
-  doc.moveDown(0.5);
-  doc.fontSize(11).font("Helvetica");
+  const boxPadding = 15;
+  const rowHeight = 18;
   
-  // Content
+  doc.text("Nama Anak", 50 + boxPadding, yPos + boxPadding);
+  doc.text(`:  ${report.child.name}`, 150 + boxPadding, yPos + boxPadding);
+  
+  doc.text("Usia", 50 + boxPadding, yPos + boxPadding + rowHeight);
+  doc.text(`:  ${age}`, 150 + boxPadding, yPos + boxPadding + rowHeight);
+  
+  doc.text("Tanggal", 50 + boxPadding, yPos + boxPadding + rowHeight * 2);
+  doc.text(`:  ${dateStr}`, 150 + boxPadding, yPos + boxPadding + rowHeight * 2);
+  
+  doc.text("Terapis", 50 + boxPadding, yPos + boxPadding + rowHeight * 3);
+  doc.text(`:  ${report.therapist.name}`, 150 + boxPadding, yPos + boxPadding + rowHeight * 3);
+
+  yPos += 110;
+
+  // Helper for Section Title
+  const drawSectionTitle = (title) => {
+    doc.rect(50, yPos, 4, 18).fill(COLORS.primary);
+    doc.fontSize(14).font("Helvetica-Bold").fillColor(COLORS.primary);
+    doc.text(title, 62, yPos + 2, { width: contentWidth - 12 });
+    yPos += 24;
+    doc.moveTo(50, yPos).lineTo(50 + contentWidth, yPos).strokeColor(COLORS.border).lineWidth(1).stroke();
+    yPos += 12;
+  };
+
+  // HASIL PERKEMBANGAN
+  drawSectionTitle("HASIL PERKEMBANGAN");
+  
+  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
   if (report.content) {
     const contentLines = report.content.split('\\n').filter(l => l.trim().length > 0);
     contentLines.forEach(line => {
-      doc.text(`✓ ${line.trim().replace(/^[-•]\\s*/, '')}`);
-      doc.moveDown(0.5);
+      doc.fillColor(COLORS.success).text("✓ ", 50, yPos, { continued: true });
+      doc.fillColor(COLORS.dark).text(`${line.trim().replace(/^[-•]\\s*/, '')}`, 65, yPos, { width: contentWidth - 15 });
+      yPos += doc.heightOfString(line, { width: contentWidth - 15 }) + 8;
     });
   }
 
-  // Barriers
   if (report.barriers) {
     const barrierLines = report.barriers.split('\\n').filter(l => l.trim().length > 0);
     barrierLines.forEach(line => {
-      doc.fillColor(COLORS.warning).text(`⚠ ${line.trim().replace(/^[-•]\\s*/, '')}`);
-      doc.moveDown(0.5);
+      doc.fillColor(COLORS.warning).text("⚠ ", 50, yPos, { continued: true });
+      doc.fillColor(COLORS.dark).text(`${line.trim().replace(/^[-•]\\s*/, '')}`, 65, yPos, { width: contentWidth - 15 });
+      yPos += doc.heightOfString(line, { width: contentWidth - 15 }) + 8;
     });
-    doc.fillColor(COLORS.dark);
   }
+  yPos += 10;
 
-  drawLine();
-
-  doc.fontSize(12).font("Helvetica-Bold").text("KESIMPULAN");
-  doc.moveDown(0.5);
-  doc.fontSize(11).font("Helvetica");
-  doc.text("Perkembangan kemampuan bicara anak mengalami peningkatan dibandingkan evaluasi sebelumnya.");
+  // KESIMPULAN
+  drawSectionTitle("KESIMPULAN");
+  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
   
-  drawLine();
+  const kesimpulan = "Perkembangan kemampuan bicara anak mengalami peningkatan dibandingkan evaluasi sebelumnya.";
+  doc.text(kesimpulan, 50, yPos, { width: contentWidth });
+  yPos += doc.heightOfString(kesimpulan, { width: contentWidth }) + 20;
 
-  doc.fontSize(12).font("Helvetica-Bold").text("SARAN UNTUK ORANG TUA");
-  doc.moveDown(0.5);
-  doc.fontSize(11).font("Helvetica");
+  // SARAN UNTUK ORANG TUA
+  drawSectionTitle("SARAN UNTUK ORANG TUA");
+  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
   
   if (report.parentExercises) {
     let exercises = [];
@@ -655,15 +681,22 @@ const generateSingleProgressReport = async (reportId) => {
     }
     exercises.forEach(ex => {
       if (ex && ex.trim()) {
-        doc.text(`• ${ex.trim().replace(/^[-•]\\s*/, '')}`);
-        doc.moveDown(0.5);
+        doc.fillColor(COLORS.primary).text("• ", 50, yPos, { continued: true });
+        doc.fillColor(COLORS.dark).text(`${ex.trim().replace(/^[-•]\\s*/, '')}`, 65, yPos, { width: contentWidth - 15 });
+        yPos += doc.heightOfString(ex, { width: contentWidth - 15 }) + 8;
       }
     });
   } else {
-    doc.text("• Lanjutkan stimulasi di rumah sesuai anjuran terapis.");
+    doc.fillColor(COLORS.primary).text("• ", 50, yPos, { continued: true });
+    doc.fillColor(COLORS.dark).text("Lanjutkan stimulasi di rumah sesuai anjuran terapis.", 65, yPos, { width: contentWidth - 15 });
   }
 
-  drawLine();
+  // Footer
+  const footerY = pageHeight - 40;
+  doc.rect(0, footerY, pageWidth, 1).fill(COLORS.border);
+  doc.fontSize(8).fillColor(COLORS.light);
+  doc.text("Pondok Terapi Bicara", 50, footerY + 8, { width: contentWidth / 2, align: "left" });
+  doc.text("Laporan Perkembangan", 50 + contentWidth / 2, footerY + 8, { width: contentWidth / 2, align: "right" });
 
   doc.end();
 
