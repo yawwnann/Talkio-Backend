@@ -373,53 +373,30 @@ const generatePatientReport = async (childId) => {
         yPos += 14;
         const lines = note.content.split(/\\n|\n/).filter((l) => l.trim().length > 0);
         lines.forEach((line) => {
-          const text = line.trim().replace(/^[-•*]\s*/, "");
+          const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
           checkPageBreak(18);
-          doc.fontSize(9).fillColor(COLORS.success).font("Helvetica");
-          doc.text("✓  ", margin + 8, yPos, { continued: true });
-          doc.fillColor(COLORS.dark).text(text, { width: contentWidth - 26 });
-          yPos += doc.heightOfString(text, { width: contentWidth - 26 }) + 4;
+          doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
+          doc.text(text, margin + 12, yPos, { width: contentWidth - 20 });
+          yPos += doc.heightOfString(text, { width: contentWidth - 20 }) + 4;
         });
         yPos += 4;
       }
 
-      // ── Hambatan & Tantangan (separate sub-section) ──
+      // ── Hambatan ──
       if (note.barriers) {
         checkPageBreak(24);
         doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
-        doc.text("Hambatan & Tantangan", margin + 4, yPos, { width: contentWidth - 8 });
+        doc.text("Hambatan", margin + 4, yPos, { width: contentWidth - 8 });
         yPos += 14;
         const barrierLines = note.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
         barrierLines.forEach((line) => {
-          const text = line.trim().replace(/^[-•*]\s*/, "");
+          const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
           checkPageBreak(18);
-          doc.fontSize(9).fillColor(COLORS.warning).font("Helvetica");
-          doc.text("⚠  ", margin + 8, yPos, { continued: true });
-          doc.fillColor(COLORS.dark).text(text, { width: contentWidth - 26 });
-          yPos += doc.heightOfString(text, { width: contentWidth - 26 }) + 4;
+          doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
+          doc.text(text, margin + 12, yPos, { width: contentWidth - 20 });
+          yPos += doc.heightOfString(text, { width: contentWidth - 20 }) + 4;
         });
         yPos += 4;
-      }
-
-      // ── Skor Evaluasi ──
-      const scoreParts = [];
-      if (note.speechClarity !== null && note.speechClarity !== undefined) {
-        scoreParts.push(`Kejelasan Bicara: ${note.speechClarity}`);
-      }
-      if (note.vocabulary !== null && note.vocabulary !== undefined) {
-        scoreParts.push(`Kosakata: ${note.vocabulary}`);
-      }
-      if (note.socialInteraction !== null && note.socialInteraction !== undefined) {
-        scoreParts.push(`Interaksi Sosial: ${note.socialInteraction}`);
-      }
-      if (scoreParts.length > 0) {
-        checkPageBreak(24);
-        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
-        doc.text("Skor Evaluasi", margin + 4, yPos, { width: contentWidth - 8 });
-        yPos += 14;
-        doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
-        doc.text(scoreParts.join("   |   "), margin + 8, yPos, { width: contentWidth - 16 });
-        yPos += 16;
       }
 
       // ── Latihan di Rumah ──
@@ -527,13 +504,13 @@ const generatePatientReport = async (childId) => {
 
   // ---- FINAL FOOTER ----
   yPos += 8;
-  checkPageBreak(50);
+  if (yPos > pageHeight - 60) yPos = pageHeight - 60;
   doc.rect(margin, yPos, contentWidth, 0.5).fill(COLORS.border);
-  yPos += 8;
+  yPos += 6;
 
   doc.fontSize(8).fillColor(COLORS.light).font("Helvetica-Oblique");
   doc.text("Laporan ini digenerate secara otomatis oleh sistem Pondok Terapi Bicara.", margin, yPos, { width: contentWidth, align: "center" });
-  yPos += 12;
+  yPos += 10;
   doc.text("Untuk informasi lebih lanjut, silakan hubungi terapis yang menangani anak Anda.", margin, yPos, { width: contentWidth, align: "center" });
   doc.fillColor(COLORS.dark);
 
@@ -663,7 +640,10 @@ const generateSingleProgressReport = async (reportId) => {
   if (report.content) {
     const lines = report.content.split(/\\n|\n/).filter((l) => l.trim().length > 0);
     lines.forEach((line) => {
-      drawBullet(line.replace(/^[-•*]\s*/, ""), "✓  ", COLORS.success, 4);
+      const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
+      doc.fontSize(10).font("Helvetica").fillColor(COLORS.dark);
+      doc.text(text, marginLeft + 8, yPos, { width: contentWidth - 16 });
+      yPos += doc.heightOfString(text, { width: contentWidth - 16 }) + 6;
     });
   } else {
     doc.fontSize(10).font("Helvetica-Oblique").fillColor(COLORS.light);
@@ -672,39 +652,17 @@ const generateSingleProgressReport = async (reportId) => {
   }
   yPos += 8;
 
-  // ── HAMBATAN & TANTANGAN ──
+  // ── HAMBATAN ──
   if (report.barriers) {
-    drawSectionTitle("HAMBATAN & TANTANGAN");
+    drawSectionTitle("HAMBATAN");
     const barrierLines = report.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
     barrierLines.forEach((line) => {
-      drawBullet(line.replace(/^[-•*]\s*/, ""), "⚠  ", COLORS.warning, 4);
+      const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
+      doc.fontSize(10).font("Helvetica").fillColor(COLORS.dark);
+      doc.text(text, marginLeft + 8, yPos, { width: contentWidth - 16 });
+      yPos += doc.heightOfString(text, { width: contentWidth - 16 }) + 6;
     });
     yPos += 8;
-  }
-
-  // ── SKOR EVALUASI ──
-  const scoreParts = [];
-  if (report.speechClarity !== null && report.speechClarity !== undefined) {
-    scoreParts.push(`Kejelasan Bicara: ${report.speechClarity}/10`);
-  }
-  if (report.vocabulary !== null && report.vocabulary !== undefined) {
-    scoreParts.push(`Kosakata: ${report.vocabulary}/10`);
-  }
-  if (report.socialInteraction !== null && report.socialInteraction !== undefined) {
-    scoreParts.push(`Interaksi Sosial: ${report.socialInteraction}/10`);
-  }
-  if (scoreParts.length > 0) {
-    drawSectionTitle("SKOR EVALUASI");
-    doc.rect(marginLeft, yPos, contentWidth, 30).fill(COLORS.bgBlue);
-    const statW = contentWidth / scoreParts.length;
-    scoreParts.forEach((s, i) => {
-      const parts = s.split(": ");
-      doc.fontSize(8).fillColor(COLORS.medium).font("Helvetica");
-      doc.text(parts[0], marginLeft + i * statW + 6, yPos + 4, { width: statW - 12, align: "center" });
-      doc.fontSize(12).fillColor(COLORS.primary).font("Helvetica-Bold");
-      doc.text(parts[1] || "", marginLeft + i * statW + 6, yPos + 16, { width: statW - 12, align: "center" });
-    });
-    yPos += 38;
   }
 
   // ── SARAN UNTUK ORANG TUA ──
