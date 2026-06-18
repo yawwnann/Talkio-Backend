@@ -526,6 +526,7 @@ const getAdminReports = async (req, res) => {
 
     const reports = notes.map((n) => ({
       id: n.id,
+      childId: n.child?.id || null,
       childName: n.child?.name || "-",
       therapistName: n.therapist?.name || "-",
       therapistEmail: n.therapist?.email || "-",
