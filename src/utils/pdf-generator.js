@@ -75,8 +75,8 @@ const generatePatientReport = async (childId) => {
 
   // ========== HELPER FUNCTIONS ==========
 
-  function checkPageBreak(requiredSpace = 80) {
-    if (yPos + requiredSpace > pageHeight - 80) {
+  function checkPageBreak(requiredSpace = 60) {
+    if (yPos + requiredSpace > pageHeight - 60) {
       addFooter();
       doc.addPage();
       pageNum++;
@@ -365,46 +365,43 @@ const generatePatientReport = async (childId) => {
       doc.text(header, margin + 4, yPos, { width: contentWidth - 8 });
       yPos += headerHeight + 8;
 
-      if (note.status) {
-        drawInfoRow("Status", note.status, { labelWidth: 120 });
-      }
-
-      if (note.sessionDate) {
-        drawInfoRow(
-          "Tanggal Sesi",
-          new Date(note.sessionDate).toLocaleDateString("id-ID", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }),
-          { labelWidth: 120 },
-        );
-      }
-
+      // ── Hasil Perkembangan ──
       if (note.content) {
-        drawWrappedBlock("Ringkasan Progress", note.content);
-      }
-
-      if (note.barriers) {
-        drawWrappedBlock("Hambatan", note.barriers);
-      }
-
-      const exercises = parseParentExercises(note.parentExercises);
-      if (exercises.length > 0) {
-        checkPageBreak(40);
-        doc.fontSize(9).fillColor(COLORS.medium).font("Helvetica-Bold");
-        doc.text("Latihan di Rumah", margin + 4, yPos, { width: contentWidth - 8 });
-        yPos += 14;
-        drawExerciseList(exercises);
-      } else {
         checkPageBreak(24);
-        doc.fontSize(9).fillColor(COLORS.light).font("Helvetica-Oblique");
-        doc.text("Latihan di rumah belum diisi pada laporan ini.", margin + 4, yPos, {
-          width: contentWidth - 8,
+        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
+        doc.text("Hasil Perkembangan", margin + 4, yPos, { width: contentWidth - 8 });
+        yPos += 14;
+        const lines = note.content.split(/\\n|\n/).filter((l) => l.trim().length > 0);
+        lines.forEach((line) => {
+          const text = line.trim().replace(/^[-•*]\s*/, "");
+          checkPageBreak(18);
+          doc.fontSize(9).fillColor(COLORS.success).font("Helvetica");
+          doc.text("✓  ", margin + 8, yPos, { continued: true });
+          doc.fillColor(COLORS.dark).text(text, { width: contentWidth - 26 });
+          yPos += doc.heightOfString(text, { width: contentWidth - 26 }) + 4;
         });
-        yPos += 16;
+        yPos += 4;
       }
 
+      // ── Hambatan & Tantangan (separate sub-section) ──
+      if (note.barriers) {
+        checkPageBreak(24);
+        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
+        doc.text("Hambatan & Tantangan", margin + 4, yPos, { width: contentWidth - 8 });
+        yPos += 14;
+        const barrierLines = note.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
+        barrierLines.forEach((line) => {
+          const text = line.trim().replace(/^[-•*]\s*/, "");
+          checkPageBreak(18);
+          doc.fontSize(9).fillColor(COLORS.warning).font("Helvetica");
+          doc.text("⚠  ", margin + 8, yPos, { continued: true });
+          doc.fillColor(COLORS.dark).text(text, { width: contentWidth - 26 });
+          yPos += doc.heightOfString(text, { width: contentWidth - 26 }) + 4;
+        });
+        yPos += 4;
+      }
+
+      // ── Skor Evaluasi ──
       const scoreParts = [];
       if (note.speechClarity !== null && note.speechClarity !== undefined) {
         scoreParts.push(`Kejelasan Bicara: ${note.speechClarity}`);
@@ -416,10 +413,31 @@ const generatePatientReport = async (childId) => {
         scoreParts.push(`Interaksi Sosial: ${note.socialInteraction}`);
       }
       if (scoreParts.length > 0) {
-        drawWrappedBlock("Skor Evaluasi", scoreParts.join(" | "));
+        checkPageBreak(24);
+        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
+        doc.text("Skor Evaluasi", margin + 4, yPos, { width: contentWidth - 8 });
+        yPos += 14;
+        doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
+        doc.text(scoreParts.join("   |   "), margin + 8, yPos, { width: contentWidth - 16 });
+        yPos += 16;
       }
 
-      yPos += 4;
+      // ── Latihan di Rumah ──
+      const exercises = parseParentExercises(note.parentExercises);
+      if (exercises.length > 0) {
+        checkPageBreak(24);
+        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
+        doc.text("Latihan di Rumah", margin + 4, yPos, { width: contentWidth - 8 });
+        yPos += 14;
+        exercises.forEach((exercise, idx) => {
+          checkPageBreak(18);
+          doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
+          doc.text(`${idx + 1}. ${exercise}`, margin + 12, yPos, { width: contentWidth - 20 });
+          yPos += doc.heightOfString(`${idx + 1}. ${exercise}`, { width: contentWidth - 20 }) + 4;
+        });
+      }
+
+      yPos += 6;
     });
   } else {
     doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
@@ -508,14 +526,14 @@ const generatePatientReport = async (childId) => {
   }
 
   // ---- FINAL FOOTER ----
-  checkPageBreak(80);
-  yPos += 16;
-  doc.rect(margin, yPos, contentWidth, 1).fill(COLORS.border);
-  yPos += 14;
+  yPos += 8;
+  checkPageBreak(50);
+  doc.rect(margin, yPos, contentWidth, 0.5).fill(COLORS.border);
+  yPos += 8;
 
-  doc.fontSize(9).fillColor(COLORS.light).font("Helvetica-Oblique");
+  doc.fontSize(8).fillColor(COLORS.light).font("Helvetica-Oblique");
   doc.text("Laporan ini digenerate secara otomatis oleh sistem Pondok Terapi Bicara.", margin, yPos, { width: contentWidth, align: "center" });
-  yPos += 14;
+  yPos += 12;
   doc.text("Untuk informasi lebih lanjut, silakan hubungi terapis yang menangani anak Anda.", margin, yPos, { width: contentWidth, align: "center" });
   doc.fillColor(COLORS.dark);
 
@@ -585,118 +603,139 @@ const generateSingleProgressReport = async (reportId) => {
 
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
+  const marginLeft = 50;
   const contentWidth = pageWidth - 100;
   let yPos = 50;
 
   // Header Bar
   doc.rect(0, 0, pageWidth, 12).fill(COLORS.primary);
   doc.rect(0, 12, pageWidth, 3).fill(COLORS.accent);
-  
   yPos = 50;
 
   // Title
-  doc.fontSize(20).font("Helvetica-Bold").fillColor(COLORS.primary).text("LAPORAN PERKEMBANGAN ANAK", 50, yPos, { align: "center" });
+  doc.fontSize(20).font("Helvetica-Bold").fillColor(COLORS.primary);
+  doc.text("LAPORAN PERKEMBANGAN ANAK", marginLeft, yPos, { align: "center", width: contentWidth });
   yPos += 30;
 
   // Info Box
-  doc.rect(50, yPos, contentWidth, 90).fill(COLORS.bgBlue);
-  
+  doc.rect(marginLeft, yPos, contentWidth, 90).fill(COLORS.bgBlue);
   doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
   const age = calculateAge(report.child.dateOfBirth);
   const dateObj = new Date(report.date);
   const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
   const dateStr = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
-  
+
   const boxPadding = 15;
   const rowHeight = 18;
-  
-  doc.text("Nama Anak", 50 + boxPadding, yPos + boxPadding);
-  doc.text(`:  ${report.child.name}`, 150 + boxPadding, yPos + boxPadding);
-  
-  doc.text("Usia", 50 + boxPadding, yPos + boxPadding + rowHeight);
-  doc.text(`:  ${age}`, 150 + boxPadding, yPos + boxPadding + rowHeight);
-  
-  doc.text("Tanggal", 50 + boxPadding, yPos + boxPadding + rowHeight * 2);
-  doc.text(`:  ${dateStr}`, 150 + boxPadding, yPos + boxPadding + rowHeight * 2);
-  
-  doc.text("Terapis", 50 + boxPadding, yPos + boxPadding + rowHeight * 3);
-  doc.text(`:  ${report.therapist.name}`, 150 + boxPadding, yPos + boxPadding + rowHeight * 3);
+  doc.text("Nama Anak", marginLeft + boxPadding, yPos + boxPadding);
+  doc.text(`:  ${report.child.name}`, marginLeft + 130, yPos + boxPadding);
+  doc.text("Usia", marginLeft + boxPadding, yPos + boxPadding + rowHeight);
+  doc.text(`:  ${age}`, marginLeft + 130, yPos + boxPadding + rowHeight);
+  doc.text("Tanggal", marginLeft + boxPadding, yPos + boxPadding + rowHeight * 2);
+  doc.text(`:  ${dateStr}`, marginLeft + 130, yPos + boxPadding + rowHeight * 2);
+  doc.text("Terapis", marginLeft + boxPadding, yPos + boxPadding + rowHeight * 3);
+  doc.text(`:  ${report.therapist.name}`, marginLeft + 130, yPos + boxPadding + rowHeight * 3);
+  yPos += 108;
 
-  yPos += 110;
-
-  // Helper for Section Title
+  // Helper: Section Title
   const drawSectionTitle = (title) => {
-    doc.rect(50, yPos, 4, 18).fill(COLORS.primary);
-    doc.fontSize(14).font("Helvetica-Bold").fillColor(COLORS.primary);
-    doc.text(title, 62, yPos + 2, { width: contentWidth - 12 });
+    doc.rect(marginLeft, yPos, 4, 18).fill(COLORS.primary);
+    doc.fontSize(13).font("Helvetica-Bold").fillColor(COLORS.primary);
+    doc.text(title, marginLeft + 12, yPos + 2, { width: contentWidth - 12 });
     yPos += 24;
-    doc.moveTo(50, yPos).lineTo(50 + contentWidth, yPos).strokeColor(COLORS.border).lineWidth(1).stroke();
+    doc.moveTo(marginLeft, yPos).lineTo(marginLeft + contentWidth, yPos).strokeColor(COLORS.border).lineWidth(0.5).stroke();
     yPos += 12;
   };
 
-  // HASIL PERKEMBANGAN
+  // Helper: Bullet item
+  const drawBullet = (text, icon, iconColor, indent) => {
+    const x = marginLeft + (indent || 4);
+    const textWidth = contentWidth - (indent || 4) - 15;
+    doc.fontSize(10).font("Helvetica").fillColor(iconColor);
+    doc.text(icon, x, yPos, { continued: true });
+    doc.fillColor(COLORS.dark).text(text.trim(), { width: textWidth });
+    yPos += doc.heightOfString(text.trim(), { width: textWidth }) + 6;
+  };
+
+  // ── HASIL PERKEMBANGAN ──
   drawSectionTitle("HASIL PERKEMBANGAN");
-  
-  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
+
   if (report.content) {
-    const contentLines = report.content.split('\\n').filter(l => l.trim().length > 0);
-    contentLines.forEach(line => {
-      doc.fillColor(COLORS.success).text("✓ ", 50, yPos, { continued: true });
-      doc.fillColor(COLORS.dark).text(`${line.trim().replace(/^[-•]\\s*/, '')}`, 65, yPos, { width: contentWidth - 15 });
-      yPos += doc.heightOfString(line, { width: contentWidth - 15 }) + 8;
+    const lines = report.content.split(/\\n|\n/).filter((l) => l.trim().length > 0);
+    lines.forEach((line) => {
+      drawBullet(line.replace(/^[-•*]\s*/, ""), "✓  ", COLORS.success, 4);
     });
+  } else {
+    doc.fontSize(10).font("Helvetica-Oblique").fillColor(COLORS.light);
+    doc.text("Belum ada hasil perkembangan", marginLeft + 4, yPos);
+    yPos += 18;
   }
+  yPos += 8;
 
+  // ── HAMBATAN & TANTANGAN ──
   if (report.barriers) {
-    const barrierLines = report.barriers.split('\\n').filter(l => l.trim().length > 0);
-    barrierLines.forEach(line => {
-      doc.fillColor(COLORS.warning).text("⚠ ", 50, yPos, { continued: true });
-      doc.fillColor(COLORS.dark).text(`${line.trim().replace(/^[-•]\\s*/, '')}`, 65, yPos, { width: contentWidth - 15 });
-      yPos += doc.heightOfString(line, { width: contentWidth - 15 }) + 8;
+    drawSectionTitle("HAMBATAN & TANTANGAN");
+    const barrierLines = report.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
+    barrierLines.forEach((line) => {
+      drawBullet(line.replace(/^[-•*]\s*/, ""), "⚠  ", COLORS.warning, 4);
     });
+    yPos += 8;
   }
-  yPos += 10;
 
-  // KESIMPULAN
-  drawSectionTitle("KESIMPULAN");
-  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
-  
-  const kesimpulan = "Perkembangan kemampuan bicara anak mengalami peningkatan dibandingkan evaluasi sebelumnya.";
-  doc.text(kesimpulan, 50, yPos, { width: contentWidth });
-  yPos += doc.heightOfString(kesimpulan, { width: contentWidth }) + 20;
+  // ── SKOR EVALUASI ──
+  const scoreParts = [];
+  if (report.speechClarity !== null && report.speechClarity !== undefined) {
+    scoreParts.push(`Kejelasan Bicara: ${report.speechClarity}/10`);
+  }
+  if (report.vocabulary !== null && report.vocabulary !== undefined) {
+    scoreParts.push(`Kosakata: ${report.vocabulary}/10`);
+  }
+  if (report.socialInteraction !== null && report.socialInteraction !== undefined) {
+    scoreParts.push(`Interaksi Sosial: ${report.socialInteraction}/10`);
+  }
+  if (scoreParts.length > 0) {
+    drawSectionTitle("SKOR EVALUASI");
+    doc.rect(marginLeft, yPos, contentWidth, 30).fill(COLORS.bgBlue);
+    const statW = contentWidth / scoreParts.length;
+    scoreParts.forEach((s, i) => {
+      const parts = s.split(": ");
+      doc.fontSize(8).fillColor(COLORS.medium).font("Helvetica");
+      doc.text(parts[0], marginLeft + i * statW + 6, yPos + 4, { width: statW - 12, align: "center" });
+      doc.fontSize(12).fillColor(COLORS.primary).font("Helvetica-Bold");
+      doc.text(parts[1] || "", marginLeft + i * statW + 6, yPos + 16, { width: statW - 12, align: "center" });
+    });
+    yPos += 38;
+  }
 
-  // SARAN UNTUK ORANG TUA
-  drawSectionTitle("SARAN UNTUK ORANG TUA");
-  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
-  
+  // ── SARAN UNTUK ORANG TUA ──
+  drawSectionTitle("LATIHAN DI RUMAH");
   if (report.parentExercises) {
     let exercises = [];
     try {
       exercises = JSON.parse(report.parentExercises);
       if (!Array.isArray(exercises)) {
-        exercises = report.parentExercises.split('\\n');
+        exercises = report.parentExercises.split(/\\n|\n/);
       }
-    } catch(e) {
-      exercises = report.parentExercises.split('\\n');
+    } catch (e) {
+      exercises = report.parentExercises.split(/\\n|\n/);
     }
-    exercises.forEach(ex => {
-      if (ex && ex.trim()) {
-        doc.fillColor(COLORS.primary).text("• ", 50, yPos, { continued: true });
-        doc.fillColor(COLORS.dark).text(`${ex.trim().replace(/^[-•]\\s*/, '')}`, 65, yPos, { width: contentWidth - 15 });
-        yPos += doc.heightOfString(ex, { width: contentWidth - 15 }) + 8;
-      }
-    });
+    exercises
+      .filter((ex) => ex && ex.trim())
+      .forEach((ex, idx) => {
+        drawBullet(`${idx + 1}. ${ex.trim().replace(/^[-•*]\s*/, "")}`, "", COLORS.dark, 4);
+      });
   } else {
-    doc.fillColor(COLORS.primary).text("• ", 50, yPos, { continued: true });
-    doc.fillColor(COLORS.dark).text("Lanjutkan stimulasi di rumah sesuai anjuran terapis.", 65, yPos, { width: contentWidth - 15 });
+    doc.fontSize(10).font("Helvetica-Oblique").fillColor(COLORS.light);
+    doc.text("Belum ada saran latihan untuk orang tua", marginLeft + 4, yPos);
+    yPos += 18;
   }
 
   // Footer
   const footerY = pageHeight - 40;
   doc.rect(0, footerY, pageWidth, 1).fill(COLORS.border);
   doc.fontSize(8).fillColor(COLORS.light);
-  doc.text("Pondok Terapi Bicara", 50, footerY + 8, { width: contentWidth / 2, align: "left" });
-  doc.text("Laporan Perkembangan", 50 + contentWidth / 2, footerY + 8, { width: contentWidth / 2, align: "right" });
+  doc.text("Pondok Terapi Bicara", marginLeft, footerY + 8, { width: contentWidth / 2, align: "left" });
+  doc.text("Laporan Perkembangan", marginLeft + contentWidth / 2, footerY + 8, { width: contentWidth / 2, align: "right" });
 
   doc.end();
 
