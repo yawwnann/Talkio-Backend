@@ -76,7 +76,7 @@ const generatePatientReport = async (childId) => {
   // ========== HELPER FUNCTIONS ==========
 
   function checkPageBreak(requiredSpace = 60) {
-    if (yPos + requiredSpace > pageHeight - 60) {
+    if (yPos + requiredSpace > pageHeight - 45) {
       addFooter();
       doc.addPage();
       pageNum++;
@@ -101,8 +101,8 @@ const generatePatientReport = async (childId) => {
   }
 
   function drawSectionTitle(title, icon) {
-    checkPageBreak(50);
-    yPos += 10;
+    checkPageBreak(40);
+    yPos += 6;
     // Blue bar
     doc.rect(margin, yPos, 4, 20).fill(COLORS.primary);
     doc.fontSize(14).fillColor(COLORS.primary).font("Helvetica-Bold");
@@ -345,9 +345,8 @@ const generatePatientReport = async (childId) => {
   }
 
   // ---- LAPORAN TERAPI & LATIHAN DI RUMAH ----
-  drawSectionTitle("LAPORAN TERAPI & LATIHAN DI RUMAH");
-
   if (child.progressNotes.length > 0) {
+    drawSectionTitle("LAPORAN TERAPI & LATIHAN DI RUMAH");
     child.progressNotes.forEach((note, i) => {
       const header = `${i + 1}. ${note.title || "Laporan Perkembangan"}  —  ${new Date(note.date).toLocaleDateString("id-ID", {
         year: "numeric",
@@ -416,17 +415,11 @@ const generatePatientReport = async (childId) => {
 
       yPos += 6;
     });
-  } else {
-    doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
-    doc.text("Belum ada laporan terapi", margin, yPos);
-    yPos += 24;
-    doc.fillColor(COLORS.dark);
-  }
+  } // end progressNotes
 
   // ---- GAME PROGRESS SECTION ----
-  drawSectionTitle("PROGRESS GAME LATIHAN (20 Terakhir)");
-
   if (child.gameLogs.length > 0) {
+    drawSectionTitle("PROGRESS GAME LATIHAN");
     drawTableHeader(["No", "Tanggal", "Tipe Game", "Skor", "Durasi"]);
     child.gameLogs.forEach((g, i) => {
       const cells = [
@@ -440,7 +433,7 @@ const generatePatientReport = async (childId) => {
     });
 
     // Summary stats
-    checkPageBreak(60);
+    checkPageBreak(45);
     yPos += 6;
     const totalScore = child.gameLogs.reduce((sum, g) => sum + (g.gameScore || 0), 0);
     const avgScore = (totalScore / child.gameLogs.length).toFixed(1);
@@ -463,17 +456,11 @@ const generatePatientReport = async (childId) => {
     });
     yPos += 44;
     doc.fillColor(COLORS.dark);
-  } else {
-    doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
-    doc.text("Belum ada progress game", margin, yPos);
-    yPos += 24;
-    doc.fillColor(COLORS.dark);
-  }
+  } // end gameLogs
 
   // ---- PROGRESS UPLOADS SECTION ----
-  drawSectionTitle("CATATAN PERKEMBANGAN (10 Terakhir)");
-
   if (child.progressUploads.length > 0) {
+    drawSectionTitle("CATATAN PERKEMBANGAN");
     child.progressUploads.forEach((u, i) => {
       checkPageBreak(50);
       doc.rect(margin, yPos, contentWidth, 1).fill(COLORS.border);
@@ -495,12 +482,7 @@ const generatePatientReport = async (childId) => {
       yPos += 6;
       doc.fillColor(COLORS.dark);
     });
-  } else {
-    doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
-    doc.text("Belum ada catatan perkembangan", margin, yPos);
-    yPos += 24;
-    doc.fillColor(COLORS.dark);
-  }
+  } // end progressUploads
 
   // ---- FINAL FOOTER ----
   yPos += 8;
