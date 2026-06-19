@@ -75,8 +75,8 @@ const generatePatientReport = async (childId) => {
 
   // ========== HELPER FUNCTIONS ==========
 
-  function checkPageBreak(requiredSpace = 60) {
-    if (yPos + requiredSpace > pageHeight - 45) {
+  function checkPageBreak(requiredSpace = 50) {
+    if (yPos + requiredSpace > pageHeight - 35) {
       addFooter();
       doc.addPage();
       pageNum++;
@@ -101,8 +101,8 @@ const generatePatientReport = async (childId) => {
   }
 
   function drawSectionTitle(title, icon) {
-    checkPageBreak(40);
-    yPos += 6;
+    checkPageBreak(45);
+    yPos += 4;
     // Blue bar
     doc.rect(margin, yPos, 4, 20).fill(COLORS.primary);
     doc.fontSize(14).fillColor(COLORS.primary).font("Helvetica-Bold");
@@ -155,50 +155,7 @@ const generatePatientReport = async (childId) => {
     return [];
   }
 
-  function drawWrappedBlock(label, value, opts = {}) {
-    const fontSize = opts.fontSize || 9;
-    const labelColor = opts.labelColor || COLORS.medium;
-    const textColor = opts.textColor || COLORS.dark;
-    const prefix = opts.prefix || "";
-    const width = contentWidth - 8;
-    const text = value || "-";
-
-    checkPageBreak(40);
-    doc.fontSize(fontSize).fillColor(labelColor).font("Helvetica-Bold");
-    doc.text(label, margin + 4, yPos, { width });
-    yPos += fontSize + 3;
-
-    const body = prefix ? `${prefix}${text}` : text;
-    const bodyHeight = doc.heightOfString(body, { width });
-    checkPageBreak(bodyHeight + 18);
-    doc.fontSize(fontSize).fillColor(textColor).font("Helvetica");
-    doc.text(body, margin + 4, yPos, { width });
-    yPos += bodyHeight + 10;
-    doc.fillColor(COLORS.dark);
-  }
-
-  function drawExerciseList(exercises) {
-    const items = parseParentExercises(exercises);
-    if (items.length === 0) {
-      doc.fontSize(9).fillColor(COLORS.light).font("Helvetica-Oblique");
-      doc.text("Belum ada latihan di rumah", margin + 4, yPos, { width: contentWidth - 8 });
-      yPos += 18;
-      doc.fillColor(COLORS.dark);
-      return;
-    }
-
-    items.forEach((exercise, index) => {
-      const line = `${index + 1}. ${exercise}`;
-      const height = doc.heightOfString(line, { width: contentWidth - 20 });
-      checkPageBreak(height + 14);
-      doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
-      doc.text(line, margin + 14, yPos, { width: contentWidth - 20 });
-      yPos += height + 6;
-    });
-  }
-
   function drawTableHeader(headers) {
-    checkPageBreak(30);
     const colWidth = contentWidth / headers.length;
     doc.rect(margin, yPos, contentWidth, 24).fill(COLORS.primary);
     doc.fontSize(9).fillColor(COLORS.white).font("Helvetica-Bold");
@@ -210,7 +167,6 @@ const generatePatientReport = async (childId) => {
   }
 
   function drawTableRow(cells, rowIndex) {
-    checkPageBreak(24);
     const colWidth = contentWidth / cells.length;
     const bgColor = rowIndex % 2 === 0 ? COLORS.bgLight : COLORS.white;
     doc.rect(margin, yPos, contentWidth, 22).fill(bgColor);
@@ -355,7 +311,6 @@ const generatePatientReport = async (childId) => {
       })}`;
 
       const headerHeight = doc.heightOfString(header, { width: contentWidth - 8 });
-      checkPageBreak(headerHeight + 22);
 
       doc.rect(margin, yPos, contentWidth, 1).fill(COLORS.border);
       yPos += 6;
@@ -366,14 +321,12 @@ const generatePatientReport = async (childId) => {
 
       // ── Hasil Perkembangan ──
       if (note.content) {
-        checkPageBreak(24);
         doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
         doc.text("Hasil Perkembangan", margin + 4, yPos, { width: contentWidth - 8 });
         yPos += 14;
         const lines = note.content.split(/\\n|\n/).filter((l) => l.trim().length > 0);
         lines.forEach((line) => {
           const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
-          checkPageBreak(18);
           doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
           doc.text(text, margin + 12, yPos, { width: contentWidth - 20 });
           yPos += doc.heightOfString(text, { width: contentWidth - 20 }) + 4;
@@ -383,14 +336,12 @@ const generatePatientReport = async (childId) => {
 
       // ── Hambatan ──
       if (note.barriers) {
-        checkPageBreak(24);
         doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
         doc.text("Hambatan", margin + 4, yPos, { width: contentWidth - 8 });
         yPos += 14;
         const barrierLines = note.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
         barrierLines.forEach((line) => {
           const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
-          checkPageBreak(18);
           doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
           doc.text(text, margin + 12, yPos, { width: contentWidth - 20 });
           yPos += doc.heightOfString(text, { width: contentWidth - 20 }) + 4;
@@ -401,12 +352,10 @@ const generatePatientReport = async (childId) => {
       // ── Latihan di Rumah ──
       const exercises = parseParentExercises(note.parentExercises);
       if (exercises.length > 0) {
-        checkPageBreak(24);
         doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
         doc.text("Latihan di Rumah", margin + 4, yPos, { width: contentWidth - 8 });
         yPos += 14;
         exercises.forEach((exercise, idx) => {
-          checkPageBreak(18);
           doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
           doc.text(`${idx + 1}. ${exercise}`, margin + 12, yPos, { width: contentWidth - 20 });
           yPos += doc.heightOfString(`${idx + 1}. ${exercise}`, { width: contentWidth - 20 }) + 4;
@@ -432,8 +381,6 @@ const generatePatientReport = async (childId) => {
       drawTableRow(cells, i);
     });
 
-    // Summary stats
-    checkPageBreak(45);
     yPos += 6;
     const totalScore = child.gameLogs.reduce((sum, g) => sum + (g.gameScore || 0), 0);
     const avgScore = (totalScore / child.gameLogs.length).toFixed(1);
@@ -462,7 +409,6 @@ const generatePatientReport = async (childId) => {
   if (child.progressUploads.length > 0) {
     drawSectionTitle("CATATAN PERKEMBANGAN");
     child.progressUploads.forEach((u, i) => {
-      checkPageBreak(50);
       doc.rect(margin, yPos, contentWidth, 1).fill(COLORS.border);
       yPos += 6;
       doc.fontSize(10).fillColor(COLORS.dark).font("Helvetica-Bold");
@@ -486,7 +432,6 @@ const generatePatientReport = async (childId) => {
 
   // ---- FINAL FOOTER ----
   yPos += 8;
-  if (yPos > pageHeight - 60) yPos = pageHeight - 60;
   doc.rect(margin, yPos, contentWidth, 0.5).fill(COLORS.border);
   yPos += 6;
 
