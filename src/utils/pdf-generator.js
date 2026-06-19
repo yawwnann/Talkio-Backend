@@ -3,453 +3,32 @@ const prisma = require("../utils/prisma");
 const path = require("path");
 const fs = require("fs");
 
-// Color palette
-const COLORS = {
-  primary: "#1E40AF",      // Deep blue
-  primaryLight: "#3B82F6", // Light blue
-  accent: "#10B981",       // Green accent
-  dark: "#1F2937",         // Dark gray
-  medium: "#4B5563",       // Medium gray
-  light: "#9CA3AF",        // Light gray
-  bgLight: "#F3F4F6",      // Background
-  bgBlue: "#EFF6FF",       // Light blue bg
+// ──────────────────────────────────────────────
+//  SHARED CONSTANTS
+// ──────────────────────────────────────────────
+const C = {
+  primary: "#1E40AF",
+  accent: "#10B981",
+  dark: "#1F2937",
+  medium: "#4B5563",
+  light: "#9CA3AF",
+  bgLight: "#F3F4F6",
+  bgBlue: "#EFF6FF",
   white: "#FFFFFF",
   border: "#D1D5DB",
-  success: "#059669",
-  warning: "#D97706",
-  danger: "#DC2626",
 };
 
-/**
- * Generate professional PDF report for patient progress
- */
-const generatePatientReport = async (childId) => {
-  const child = await prisma.child.findUnique({
-    where: { id: childId },
-    include: {
-      parent: { select: { name: true, email: true } },
-      diagnoses: { orderBy: { createdAt: "desc" } },
-      progressNotes: {
-        orderBy: { date: "desc" },
-        take: 10,
-      },
-      therapySessions: {
-        include: { therapist: { select: { name: true, email: true } } },
-        orderBy: { schedule: "desc" },
-      },
-      gameLogs: { orderBy: { playedAt: "desc" }, take: 20 },
-      progressUploads: { orderBy: { createdAt: "desc" }, take: 10 },
-    },
-  });
+const A4W = 595.28;
+const A4H = 841.89;
+const M = 50;                    // margin
+const CW = A4W - M * 2;         // content width ≈ 495
+const HEADER_H = 15;             // top bar height
+const FOOTER_Y = A4H - 35;      // footer line y
+const SAFE_Y = A4H - 55;        // max y before we must start a new page
 
-  if (!child) throw new Error("Child not found");
-
-  const doc = new PDFDocument({
-    size: "A4",
-    margin: 0,
-    info: {
-      Title: `Laporan Perkembangan - ${child.name}`,
-      Author: "Pondok Terapi Bicara",
-      Subject: "Laporan Perkembangan Anak",
-    },
-  });
-
-  const fileName = `report-${childId}-${Date.now()}.pdf`;
-  const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
-  const filePath = isVercel
-    ? path.join("/tmp", "uploads", "reports", fileName)
-    : path.join(__dirname, "..", "..", "uploads", "reports", fileName);
-
-  const reportsDir = path.dirname(filePath);
-  if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
-
-  const stream = fs.createWriteStream(filePath);
-  doc.pipe(stream);
-
-  const pageWidth = doc.page.width;
-  const pageHeight = doc.page.height;
-  const margin = 50;
-  const contentWidth = pageWidth - margin * 2;
-  let yPos = 0;
-  let pageNum = 1;
-
-  // ========== HELPER FUNCTIONS ==========
-
-  function checkPageBreak(requiredSpace = 50) {
-    if (yPos + requiredSpace > pageHeight - 35) {
-      addFooter();
-      doc.addPage();
-      pageNum++;
-      yPos = margin;
-      drawHeaderBar();
-    }
-  }
-
-  function drawHeaderBar() {
-    doc.rect(0, 0, pageWidth, 12).fill(COLORS.primary);
-    doc.rect(0, 12, pageWidth, 3).fill(COLORS.accent);
-    yPos = margin;
-  }
-
-  function addFooter() {
-    const footerY = pageHeight - 40;
-    doc.rect(0, footerY, pageWidth, 1).fill(COLORS.border);
-    doc.fontSize(8).fillColor(COLORS.light);
-    doc.text("Pondok Terapi Bicara", margin, footerY + 8, { width: contentWidth / 2, align: "left" });
-    doc.text(`Halaman ${pageNum}`, margin + contentWidth / 2, footerY + 8, { width: contentWidth / 2, align: "right" });
-    doc.fillColor(COLORS.dark);
-  }
-
-  function drawSectionTitle(title, icon) {
-    checkPageBreak(45);
-    yPos += 4;
-    // Blue bar
-    doc.rect(margin, yPos, 4, 20).fill(COLORS.primary);
-    doc.fontSize(14).fillColor(COLORS.primary).font("Helvetica-Bold");
-    doc.text(title, margin + 12, yPos + 3, { width: contentWidth - 12 });
-    yPos += 28;
-    // Thin line
-    doc.moveTo(margin, yPos).lineTo(margin + contentWidth, yPos).strokeColor(COLORS.border).lineWidth(0.5).stroke();
-    yPos += 12;
-  }
-
-  function drawInfoRow(label, value, opts = {}) {
-    const labelWidth = opts.labelWidth || 160;
-    const valWidth = contentWidth - labelWidth;
-
-    doc.fontSize(10).fillColor(COLORS.medium).font("Helvetica");
-    doc.text(label, margin, yPos, { width: labelWidth, align: "left" });
-    doc.fontSize(10).fillColor(COLORS.dark).font("Helvetica-Bold");
-    doc.text(value || "-", margin + labelWidth, yPos, { width: valWidth, align: "left" });
-    yPos += 18;
-  }
-
-  function parseParentExercises(rawExercises) {
-    if (!rawExercises) return [];
-    if (Array.isArray(rawExercises)) {
-      return rawExercises.map((item) => String(item).trim()).filter(Boolean);
-    }
-
-    if (typeof rawExercises === "string") {
-      const normalized = rawExercises.trim();
-      if (!normalized) return [];
-
-      try {
-        const parsed = JSON.parse(normalized);
-        if (Array.isArray(parsed)) {
-          return parsed.map((item) => String(item).trim()).filter(Boolean);
-        }
-        if (typeof parsed === "string" && parsed.trim()) {
-          return [parsed.trim()];
-        }
-      } catch (_err) {
-        // Fall through to plain-text parsing.
-      }
-
-      return normalized
-        .split(/\r?\n|;\s*|•\s*/g)
-        .map((item) => item.trim())
-        .filter(Boolean);
-    }
-
-    return [];
-  }
-
-  function drawTableHeader(headers) {
-    const colWidth = contentWidth / headers.length;
-    doc.rect(margin, yPos, contentWidth, 24).fill(COLORS.primary);
-    doc.fontSize(9).fillColor(COLORS.white).font("Helvetica-Bold");
-    headers.forEach((h, i) => {
-      doc.text(h, margin + i * colWidth + 6, yPos + 7, { width: colWidth - 12, align: "left" });
-    });
-    yPos += 26;
-    doc.fillColor(COLORS.dark);
-  }
-
-  function drawTableRow(cells, rowIndex) {
-    const colWidth = contentWidth / cells.length;
-    const bgColor = rowIndex % 2 === 0 ? COLORS.bgLight : COLORS.white;
-    doc.rect(margin, yPos, contentWidth, 22).fill(bgColor);
-    doc.fontSize(8.5).fillColor(COLORS.dark).font("Helvetica");
-    cells.forEach((c, i) => {
-      doc.text(String(c || "-"), margin + i * colWidth + 6, yPos + 6, { width: colWidth - 12, align: "left" });
-    });
-    yPos += 24;
-    doc.fillColor(COLORS.dark);
-  }
-
-  function drawRiskBadge(level) {
-    const colors = {
-      RINGAN: COLORS.success,
-      SEDANG: COLORS.warning,
-      BERAT: COLORS.danger,
-    };
-    return colors[level?.toUpperCase()] || COLORS.light;
-  }
-
-  function drawKeyValueBox(key, value) {
-    const boxWidth = (contentWidth - 10) / 2;
-    const x = margin;
-    doc.rect(x, yPos, boxWidth, 32).fill(COLORS.bgBlue);
-    doc.fontSize(8).fillColor(COLORS.medium).font("Helvetica");
-    doc.text(key, x + 8, yPos + 4, { width: boxWidth - 16 });
-    doc.fontSize(11).fillColor(COLORS.primary).font("Helvetica-Bold");
-    doc.text(value, x + 8, yPos + 17, { width: boxWidth - 16 });
-    doc.fillColor(COLORS.dark);
-  }
-
-  // ========== START DRAWING ==========
-
-  // Top color bar
-  drawHeaderBar();
-
-  // ---- HEADER / COVER ----
-  doc.rect(margin, yPos, contentWidth, 90).fill(COLORS.bgBlue);
-  // Logo area (circle)
-  doc.circle(margin + 40, yPos + 45, 28).fill(COLORS.primary);
-  doc.fontSize(20).fillColor(COLORS.white).font("Helvetica-Bold");
-  doc.text("PTB", margin + 22, yPos + 33, { width: 36, align: "center" });
-
-  doc.fillColor(COLORS.primary).font("Helvetica-Bold").fontSize(20);
-  doc.text("Pondok Terapi Bicara", margin + 80, yPos + 18, { width: contentWidth - 90 });
-  doc.fontSize(11).fillColor(COLORS.medium).font("Helvetica");
-  doc.text("Laporan Perkembangan Anak", margin + 80, yPos + 44, { width: contentWidth - 90 });
-  doc.fontSize(9).fillColor(COLORS.light);
-  doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`, margin + 80, yPos + 62, { width: contentWidth - 90 });
-  doc.fillColor(COLORS.dark);
-  yPos += 100;
-
-  // ---- PATIENT INFO SECTION ----
-  drawSectionTitle("INFORMASI ANAK");
-
-  // Summary boxes row
-  const age = calculateAge(child.dateOfBirth);
-  const totalSesi = child.therapySessions.length;
-  const totalGame = child.gameLogs.length;
-  const latestDiag = child.diagnoses[0];
-
-  const boxW = (contentWidth - 20) / 3;
-  drawKeyValueBox("Usia", age);
-  // Move x for next box
-  const savedY = yPos;
-  yPos = savedY;
-  doc.rect(margin + boxW + 10, savedY, boxW, 32).fill(COLORS.bgBlue);
-  doc.fontSize(8).fillColor(COLORS.medium).font("Helvetica");
-  doc.text("Total Sesi Terapi", margin + boxW + 18, savedY + 4, { width: boxW - 16 });
-  doc.fontSize(11).fillColor(COLORS.primary).font("Helvetica-Bold");
-  doc.text(`${totalSesi} sesi`, margin + boxW + 18, savedY + 17, { width: boxW - 16 });
-
-  doc.rect(margin + (boxW + 10) * 2, savedY, boxW, 32).fill(COLORS.bgBlue);
-  doc.fontSize(8).fillColor(COLORS.medium).font("Helvetica");
-  doc.text("Total Game Dimainkan", margin + (boxW + 10) * 2 + 8, savedY + 4, { width: boxW - 16 });
-  doc.fontSize(11).fillColor(COLORS.primary).font("Helvetica-Bold");
-  doc.text(`${totalGame} game`, margin + (boxW + 10) * 2 + 8, savedY + 17, { width: boxW - 16 });
-  doc.fillColor(COLORS.dark);
-
-  yPos = savedY + 42;
-
-  // Detail info
-  drawInfoRow("Nama Anak", child.name);
-  drawInfoRow("Tanggal Lahir", new Date(child.dateOfBirth).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" }));
-  drawInfoRow("Jenis Kelamin", child.gender === "MALE" ? "Laki-laki" : "Perempuan");
-  drawInfoRow("Orang Tua", child.parent?.name || "-");
-  if (child.parent?.email) drawInfoRow("Email Orang Tua", child.parent.email);
-
-  // ---- DIAGNOSIS SECTION ----
-  drawSectionTitle("RIWAYAT DIAGNOSIS");
-
-  if (child.diagnoses.length > 0) {
-    drawTableHeader(["No", "Tanggal", "Level Risiko", "Skor", "Rekomendasi"]);
-    child.diagnoses.forEach((d, i) => {
-      const cells = [
-        `${i + 1}`,
-        new Date(d.createdAt).toLocaleDateString("id-ID"),
-        d.riskLevel || "-",
-        String(d.score || "-"),
-        (d.recommendation || "-").substring(0, 40),
-      ];
-      drawTableRow(cells, i);
-    });
-  } else {
-    doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
-    doc.text("Belum ada riwayat diagnosis", margin, yPos);
-    yPos += 24;
-    doc.fillColor(COLORS.dark);
-  }
-
-  // ---- THERAPY SESSIONS SECTION ----
-  drawSectionTitle("RIWAYAT SESI TERAPI");
-
-  if (child.therapySessions.length > 0) {
-    drawTableHeader(["No", "Tanggal", "Tipe Terapi", "Terapis", "Status Bayar", "Aktif"]);
-    child.therapySessions.forEach((s, i) => {
-      const cells = [
-        `${i + 1}`,
-        new Date(s.schedule).toLocaleDateString("id-ID"),
-        s.therapyType || "-",
-        s.therapist?.name || "-",
-        s.paymentStatus || "-",
-        s.isActive ? "Ya" : "Tidak",
-      ];
-      drawTableRow(cells, i);
-    });
-  } else {
-    doc.fontSize(10).fillColor(COLORS.light).font("Helvetica-Oblique");
-    doc.text("Belum ada riwayat sesi terapi", margin, yPos);
-    yPos += 24;
-    doc.fillColor(COLORS.dark);
-  }
-
-  // ---- LAPORAN TERAPI & LATIHAN DI RUMAH ----
-  if (child.progressNotes.length > 0) {
-    drawSectionTitle("LAPORAN TERAPI & LATIHAN DI RUMAH");
-    child.progressNotes.forEach((note, i) => {
-      const header = `${i + 1}. ${note.title || "Laporan Perkembangan"}  —  ${new Date(note.date).toLocaleDateString("id-ID", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}`;
-
-      const headerHeight = doc.heightOfString(header, { width: contentWidth - 8 });
-
-      doc.rect(margin, yPos, contentWidth, 1).fill(COLORS.border);
-      yPos += 6;
-
-      doc.fontSize(10).fillColor(COLORS.dark).font("Helvetica-Bold");
-      doc.text(header, margin + 4, yPos, { width: contentWidth - 8 });
-      yPos += headerHeight + 8;
-
-      // ── Hasil Perkembangan ──
-      if (note.content) {
-        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
-        doc.text("Hasil Perkembangan", margin + 4, yPos, { width: contentWidth - 8 });
-        yPos += 14;
-        const lines = note.content.split(/\\n|\n/).filter((l) => l.trim().length > 0);
-        lines.forEach((line) => {
-          const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
-          doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
-          doc.text(text, margin + 12, yPos, { width: contentWidth - 20 });
-          yPos += doc.heightOfString(text, { width: contentWidth - 20 }) + 4;
-        });
-        yPos += 4;
-      }
-
-      // ── Hambatan ──
-      if (note.barriers) {
-        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
-        doc.text("Hambatan", margin + 4, yPos, { width: contentWidth - 8 });
-        yPos += 14;
-        const barrierLines = note.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
-        barrierLines.forEach((line) => {
-          const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
-          doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
-          doc.text(text, margin + 12, yPos, { width: contentWidth - 20 });
-          yPos += doc.heightOfString(text, { width: contentWidth - 20 }) + 4;
-        });
-        yPos += 4;
-      }
-
-      // ── Latihan di Rumah ──
-      const exercises = parseParentExercises(note.parentExercises);
-      if (exercises.length > 0) {
-        doc.fontSize(9).fillColor(COLORS.primary).font("Helvetica-Bold");
-        doc.text("Latihan di Rumah", margin + 4, yPos, { width: contentWidth - 8 });
-        yPos += 14;
-        exercises.forEach((exercise, idx) => {
-          doc.fontSize(9).fillColor(COLORS.dark).font("Helvetica");
-          doc.text(`${idx + 1}. ${exercise}`, margin + 12, yPos, { width: contentWidth - 20 });
-          yPos += doc.heightOfString(`${idx + 1}. ${exercise}`, { width: contentWidth - 20 }) + 4;
-        });
-      }
-
-      yPos += 6;
-    });
-  } // end progressNotes
-
-  // ---- GAME PROGRESS SECTION ----
-  if (child.gameLogs.length > 0) {
-    drawSectionTitle("PROGRESS GAME LATIHAN");
-    drawTableHeader(["No", "Tanggal", "Tipe Game", "Skor", "Durasi"]);
-    child.gameLogs.forEach((g, i) => {
-      const cells = [
-        `${i + 1}`,
-        new Date(g.playedAt).toLocaleDateString("id-ID"),
-        g.gameType || "-",
-        String(g.gameScore || 0),
-        formatDuration(g.duration || 0),
-      ];
-      drawTableRow(cells, i);
-    });
-
-    yPos += 6;
-    const totalScore = child.gameLogs.reduce((sum, g) => sum + (g.gameScore || 0), 0);
-    const avgScore = (totalScore / child.gameLogs.length).toFixed(1);
-    const maxScore = Math.max(...child.gameLogs.map((g) => g.gameScore || 0));
-    const totalDuration = child.gameLogs.reduce((sum, g) => sum + (g.duration || 0), 0);
-
-    doc.rect(margin, yPos, contentWidth, 36).fill(COLORS.bgBlue);
-    const statW = contentWidth / 4;
-    const stats = [
-      { label: "Total Game", value: `${child.gameLogs.length}` },
-      { label: "Rata-rata Skor", value: avgScore },
-      { label: "Skor Tertinggi", value: String(maxScore) },
-      { label: "Total Durasi", value: formatDuration(totalDuration) },
-    ];
-    stats.forEach((s, i) => {
-      doc.fontSize(8).fillColor(COLORS.medium).font("Helvetica");
-      doc.text(s.label, margin + i * statW + 6, yPos + 4, { width: statW - 12, align: "center" });
-      doc.fontSize(12).fillColor(COLORS.primary).font("Helvetica-Bold");
-      doc.text(s.value, margin + i * statW + 6, yPos + 18, { width: statW - 12, align: "center" });
-    });
-    yPos += 44;
-    doc.fillColor(COLORS.dark);
-  } // end gameLogs
-
-  // ---- PROGRESS UPLOADS SECTION ----
-  if (child.progressUploads.length > 0) {
-    drawSectionTitle("CATATAN PERKEMBANGAN");
-    child.progressUploads.forEach((u, i) => {
-      doc.rect(margin, yPos, contentWidth, 1).fill(COLORS.border);
-      yPos += 6;
-      doc.fontSize(10).fillColor(COLORS.dark).font("Helvetica-Bold");
-      doc.text(`Catatan #${i + 1}  —  ${new Date(u.createdAt).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })}`, margin + 4, yPos);
-      yPos += 16;
-
-      if (u.parentNotes) {
-        doc.fontSize(9).fillColor(COLORS.medium).font("Helvetica");
-        doc.text(`Catatan Orang Tua: ${u.parentNotes}`, margin + 4, yPos, { width: contentWidth - 8 });
-        yPos += 14;
-      }
-      if (u.therapistEvaluation) {
-        doc.fontSize(9).fillColor(COLORS.accent).font("Helvetica-Oblique");
-        doc.text(`Evaluasi Terapis: ${u.therapistEvaluation}`, margin + 4, yPos, { width: contentWidth - 8 });
-        yPos += 14;
-      }
-      yPos += 6;
-      doc.fillColor(COLORS.dark);
-    });
-  } // end progressUploads
-
-  // ---- FINAL FOOTER ----
-  yPos += 8;
-  doc.rect(margin, yPos, contentWidth, 0.5).fill(COLORS.border);
-  yPos += 6;
-
-  doc.fontSize(8).fillColor(COLORS.light).font("Helvetica-Oblique");
-  doc.text("Laporan ini digenerate secara otomatis oleh sistem Pondok Terapi Bicara.", margin, yPos, { width: contentWidth, align: "center" });
-  yPos += 10;
-  doc.text("Untuk informasi lebih lanjut, silakan hubungi terapis yang menangani anak Anda.", margin, yPos, { width: contentWidth, align: "center" });
-  doc.fillColor(COLORS.dark);
-
-  addFooter();
-  doc.end();
-
-  return new Promise((resolve, reject) => {
-    stream.on("finish", () => resolve(filePath));
-    stream.on("error", reject);
-  });
-};
-
+// ──────────────────────────────────────────────
+//  SHARED HELPERS
+// ──────────────────────────────────────────────
 function calculateAge(dateOfBirth) {
   const birth = new Date(dateOfBirth);
   const today = new Date();
@@ -462,172 +41,508 @@ function calculateAge(dateOfBirth) {
 
 function formatDuration(seconds) {
   if (!seconds || seconds === 0) return "0 menit";
-  const minutes = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (minutes === 0) return `${secs} detik`;
-  if (secs === 0) return `${minutes} menit`;
-  return `${minutes} menit ${secs} detik`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m === 0) return `${s} detik`;
+  if (s === 0) return `${m} menit`;
+  return `${m} menit ${s} detik`;
 }
 
-/**
- * Generate PDF for a single progress report (based on ID)
- */
+function formatIdDate(dateInput) {
+  const d = new Date(dateInput);
+  const months = [
+    "Januari","Februari","Maret","April","Mei","Juni",
+    "Juli","Agustus","September","Oktober","November","Desember",
+  ];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function parseParentExercises(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map((i) => String(i).trim()).filter(Boolean);
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return [];
+    try {
+      const p = JSON.parse(s);
+      if (Array.isArray(p)) return p.map((i) => String(i).trim()).filter(Boolean);
+      if (typeof p === "string" && p.trim()) return [p.trim()];
+    } catch (_) {}
+    return s.split(/\r?\n|;\s*|•\s*/g).map((i) => i.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function cleanLine(line) {
+  return line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
+}
+
+// ──────────────────────────────────────────────
+//  PAGE MANAGER – single object that owns doc,
+//  yPos, pageNum, header/footer drawing, and
+//  the "ensure space" logic.
+// ──────────────────────────────────────────────
+class PageManager {
+  constructor(doc, pageNum = 1) {
+    this.doc = doc;
+    this.pageNum = pageNum;
+    this.y = M;
+  }
+
+  /** Draw header bar at absolute top of current page */
+  drawHeader() {
+    const d = this.doc;
+    d.rect(0, 0, A4W, 10).fill(C.primary);
+    d.rect(0, 10, A4W, 3).fill(C.accent);
+  }
+
+  /** Draw footer at absolute bottom of current page */
+  drawFooter() {
+    const d = this.doc;
+    d.rect(0, FOOTER_Y, A4W, 0.5).fill(C.border);
+    d.fontSize(7.5).fillColor(C.light).font("Helvetica");
+    d.text("Pondok Terapi Bicara", M, FOOTER_Y + 6, { width: CW / 2, align: "left" });
+    d.text(`Halaman ${this.pageNum}`, M + CW / 2, FOOTER_Y + 6, { width: CW / 2, align: "right" });
+    d.fillColor(C.dark);
+  }
+
+  /** Add a new page, draw header, reset y */
+  newPage() {
+    this.drawFooter();
+    this.doc.addPage();
+    this.pageNum++;
+    this.drawHeader();
+    this.y = M;
+  }
+
+  /** If not enough space, start a new page. minSpace in pt. */
+  need(minSpace) {
+    if (this.y + minSpace > SAFE_Y) {
+      this.newPage();
+    }
+  }
+
+  /** Section title: blue bar + title + divider */
+  section(title) {
+    this.need(50);
+    this.y += 6;
+    this.doc.rect(M, this.y, 4, 16).fill(C.primary);
+    this.doc.fontSize(12).font("Helvetica-Bold").fillColor(C.primary);
+    this.doc.text(title, M + 12, this.y + 2, { width: CW - 12 });
+    this.y += 22;
+    this.doc.moveTo(M, this.y).lineTo(M + CW, this.y).strokeColor(C.border).lineWidth(0.5).stroke();
+    this.y += 8;
+    this.doc.fillColor(C.dark);
+  }
+
+  /** Simple label: value row */
+  infoRow(label, value) {
+    this.doc.fontSize(9.5).font("Helvetica").fillColor(C.medium);
+    this.doc.text(label, M, this.y, { width: 140 });
+    this.doc.fontSize(9.5).font("Helvetica-Bold").fillColor(C.dark);
+    this.doc.text(value || "-", M + 140, this.y, { width: CW - 140 });
+    this.y += 16;
+  }
+
+  /** Draw text block, auto-advancing y. Returns nothing. */
+  text(str, opts = {}) {
+    const x = opts.x || M;
+    const w = opts.w || CW;
+    const size = opts.size || 9.5;
+    const font = opts.font || "Helvetica";
+    const color = opts.color || C.dark;
+    this.doc.fontSize(size).font(font).fillColor(color);
+    this.doc.text(str, x, this.y, { width: w });
+    this.y += this.doc.heightOfString(str, { width: w }) + (opts.gap || 4);
+    this.doc.fillColor(C.dark);
+  }
+
+  /** Finish: draw footer on last page and end document */
+  end() {
+    this.drawFooter();
+    this.doc.end();
+  }
+}
+
+// ──────────────────────────────────────────────
+//  FILE PATH HELPER
+// ──────────────────────────────────────────────
+function getFilePath(prefix, id) {
+  const fileName = `${prefix}-${id}-${Date.now()}.pdf`;
+  const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+  const filePath = isVercel
+    ? path.join("/tmp", "uploads", "reports", fileName)
+    : path.join(__dirname, "..", "..", "uploads", "reports", fileName);
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return { filePath, fileName };
+}
+
+function streamToPromise(stream) {
+  return new Promise((resolve, reject) => {
+    stream.on("finish", () => resolve());
+    stream.on("error", reject);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  1.  generateSingleProgressReport
+//      (called by both parent & therapist)
+// ══════════════════════════════════════════════
 const generateSingleProgressReport = async (reportId) => {
   const report = await prisma.progressNote.findUnique({
     where: { id: reportId },
-    include: {
-      child: true,
-      therapist: true,
-    },
+    include: { child: true, therapist: true },
   });
-
   if (!report) throw new Error("Report not found");
 
+  const { filePath } = getFilePath("laporan", reportId);
   const doc = new PDFDocument({
     size: "A4",
-    margin: 50,
+    margin: 0,
     info: {
       Title: `Laporan Perkembangan - ${report.child.name}`,
       Author: "Pondok Terapi Bicara",
       Subject: "Laporan Perkembangan Anak",
     },
   });
-
-  const fileName = `laporan-${reportId}-${Date.now()}.pdf`;
-  const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
-  const filePath = isVercel
-    ? path.join("/tmp", "uploads", "reports", fileName)
-    : path.join(__dirname, "..", "..", "uploads", "reports", fileName);
-
-  const reportsDir = path.dirname(filePath);
-  if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
-
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
 
-  const pageWidth = doc.page.width;
-  const pageHeight = doc.page.height;
-  const marginLeft = 50;
-  const contentWidth = pageWidth - 100;
-  let yPos = 50;
+  const pm = new PageManager(doc);
+  pm.drawHeader();
 
-  // Header Bar
-  doc.rect(0, 0, pageWidth, 12).fill(COLORS.primary);
-  doc.rect(0, 12, pageWidth, 3).fill(COLORS.accent);
-  yPos = 50;
+  // ── TITLE ──
+  pm.y += 4;
+  doc.fontSize(16).font("Helvetica-Bold").fillColor(C.primary);
+  doc.text("LAPORAN PERKEMBANGAN ANAK", M, pm.y, { width: CW, align: "center" });
+  pm.y += 26;
 
-  // Title
-  doc.fontSize(20).font("Helvetica-Bold").fillColor(COLORS.primary);
-  doc.text("LAPORAN PERKEMBANGAN ANAK", marginLeft, yPos, { align: "center", width: contentWidth });
-  yPos += 30;
-
-  // Info Box
-  doc.rect(marginLeft, yPos, contentWidth, 90).fill(COLORS.bgBlue);
-  doc.fontSize(11).font("Helvetica").fillColor(COLORS.dark);
+  // ── INFO BOX ──
   const age = calculateAge(report.child.dateOfBirth);
-  const dateObj = new Date(report.date);
-  const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  const dateStr = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+  const sessionDate = formatIdDate(report.date);
 
-  const boxPadding = 15;
-  const rowHeight = 18;
-  doc.text("Nama Anak", marginLeft + boxPadding, yPos + boxPadding);
-  doc.text(`:  ${report.child.name}`, marginLeft + 130, yPos + boxPadding);
-  doc.text("Usia", marginLeft + boxPadding, yPos + boxPadding + rowHeight);
-  doc.text(`:  ${age}`, marginLeft + 130, yPos + boxPadding + rowHeight);
-  doc.text("Tanggal", marginLeft + boxPadding, yPos + boxPadding + rowHeight * 2);
-  doc.text(`:  ${dateStr}`, marginLeft + 130, yPos + boxPadding + rowHeight * 2);
-  doc.text("Terapis", marginLeft + boxPadding, yPos + boxPadding + rowHeight * 3);
-  doc.text(`:  ${report.therapist.name}`, marginLeft + 130, yPos + boxPadding + rowHeight * 3);
-  yPos += 108;
+  doc.rect(M, pm.y, CW, 80).fill(C.bgBlue);
+  doc.fillColor(C.dark);
 
-  // Helper: Section Title
-  const drawSectionTitle = (title) => {
-    doc.rect(marginLeft, yPos, 4, 18).fill(COLORS.primary);
-    doc.fontSize(13).font("Helvetica-Bold").fillColor(COLORS.primary);
-    doc.text(title, marginLeft + 12, yPos + 2, { width: contentWidth - 12 });
-    yPos += 24;
-    doc.moveTo(marginLeft, yPos).lineTo(marginLeft + contentWidth, yPos).strokeColor(COLORS.border).lineWidth(0.5).stroke();
-    yPos += 12;
+  const bx = M + 14;
+  const bw = CW - 28;
+  let by = pm.y + 12;
+
+  const infoLine = (label, value) => {
+    doc.fontSize(9).font("Helvetica").fillColor(C.medium).text(label, bx, by, { width: 100 });
+    doc.fontSize(9).font("Helvetica-Bold").fillColor(C.dark).text(`:  ${value}`, bx + 100, by, { width: bw - 100 });
+    by += 16;
   };
 
-  // Helper: Bullet item
-  const drawBullet = (text, icon, iconColor, indent) => {
-    const x = marginLeft + (indent || 4);
-    const textWidth = contentWidth - (indent || 4) - 15;
-    doc.fontSize(10).font("Helvetica").fillColor(iconColor);
-    doc.text(icon, x, yPos, { continued: true });
-    doc.fillColor(COLORS.dark).text(text.trim(), { width: textWidth });
-    yPos += doc.heightOfString(text.trim(), { width: textWidth }) + 6;
-  };
+  infoLine("Nama Anak", report.child.name);
+  infoLine("Usia", age);
+  infoLine("Tanggal Sesi", sessionDate);
+  infoLine("Terapis", report.therapist?.name || "-");
+
+  pm.y += 90;
 
   // ── HASIL PERKEMBANGAN ──
-  drawSectionTitle("HASIL PERKEMBANGAN");
+  pm.section("HASIL PERKEMBANGAN");
 
   if (report.content) {
     const lines = report.content.split(/\\n|\n/).filter((l) => l.trim().length > 0);
     lines.forEach((line) => {
-      const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
-      doc.fontSize(10).font("Helvetica").fillColor(COLORS.dark);
-      doc.text(text, marginLeft + 8, yPos, { width: contentWidth - 16 });
-      yPos += doc.heightOfString(text, { width: contentWidth - 16 }) + 6;
+      const t = cleanLine(line);
+      if (!t) return;
+      pm.text(t, { x: M + 6, w: CW - 6, size: 9.5, gap: 5 });
     });
   } else {
-    doc.fontSize(10).font("Helvetica-Oblique").fillColor(COLORS.light);
-    doc.text("Belum ada hasil perkembangan", marginLeft + 4, yPos);
-    yPos += 18;
+    pm.text("Belum ada hasil perkembangan.", { font: "Helvetica-Oblique", color: C.light });
   }
-  yPos += 8;
+  pm.y += 4;
 
   // ── HAMBATAN ──
-  if (report.barriers) {
-    drawSectionTitle("HAMBATAN");
-    const barrierLines = report.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
-    barrierLines.forEach((line) => {
-      const text = line.trim().replace(/^[\-\u2022*"\u201C\u201D\u2018\u2019]+\s*/, "");
-      doc.fontSize(10).font("Helvetica").fillColor(COLORS.dark);
-      doc.text(text, marginLeft + 8, yPos, { width: contentWidth - 16 });
-      yPos += doc.heightOfString(text, { width: contentWidth - 16 }) + 6;
+  if (report.barriers && report.barriers.trim()) {
+    pm.section("HAMBATAN");
+    const bLines = report.barriers.split(/\\n|\n/).filter((l) => l.trim().length > 0);
+    bLines.forEach((line) => {
+      const t = cleanLine(line);
+      if (!t) return;
+      pm.text(t, { x: M + 6, w: CW - 6, size: 9.5, gap: 5 });
     });
-    yPos += 8;
+    pm.y += 4;
   }
 
-  // ── SARAN UNTUK ORANG TUA ──
-  drawSectionTitle("LATIHAN DI RUMAH");
-  if (report.parentExercises) {
-    let exercises = [];
-    try {
-      exercises = JSON.parse(report.parentExercises);
-      if (!Array.isArray(exercises)) {
-        exercises = report.parentExercises.split(/\\n|\n/);
-      }
-    } catch (e) {
-      exercises = report.parentExercises.split(/\\n|\n/);
-    }
-    exercises
-      .filter((ex) => ex && ex.trim())
-      .forEach((ex, idx) => {
-        drawBullet(`${idx + 1}. ${ex.trim().replace(/^[-•*]\s*/, "")}`, "", COLORS.dark, 4);
-      });
+  // ── LATIHAN DI RUMAH ──
+  pm.section("LATIHAN DI RUMAH");
+  const exercises = parseParentExercises(report.parentExercises);
+  if (exercises.length > 0) {
+    exercises.forEach((ex, idx) => {
+      pm.text(`${idx + 1}. ${ex}`, { x: M + 6, w: CW - 6, size: 9.5, gap: 5 });
+    });
   } else {
-    doc.fontSize(10).font("Helvetica-Oblique").fillColor(COLORS.light);
-    doc.text("Belum ada saran latihan untuk orang tua", marginLeft + 4, yPos);
-    yPos += 18;
+    pm.text("Belum ada saran latihan untuk orang tua.", { font: "Helvetica-Oblique", color: C.light });
   }
 
-  // Footer
-  const footerY = pageHeight - 40;
-  doc.rect(0, footerY, pageWidth, 1).fill(COLORS.border);
-  doc.fontSize(8).fillColor(COLORS.light);
-  doc.text("Pondok Terapi Bicara", marginLeft, footerY + 8, { width: contentWidth / 2, align: "left" });
-  doc.text("Laporan Perkembangan", marginLeft + contentWidth / 2, footerY + 8, { width: contentWidth / 2, align: "right" });
+  // ── CLOSING ──
+  pm.y += 12;
+  pm.text(
+    "Laporan ini dihasilkan secara otomatis oleh sistem Pondok Terapi Bicara. Untuk informasi lebih lanjut, silakan hubungi terapis yang menangani anak Anda.",
+    { size: 7.5, color: C.light, font: "Helvetica-Oblique", w: CW, gap: 0 }
+  );
 
-  doc.end();
-
-  return new Promise((resolve, reject) => {
-    stream.on("finish", () => resolve(filePath));
-    stream.on("error", reject);
-  });
+  pm.end();
+  await streamToPromise(stream);
+  return filePath;
 };
 
+// ══════════════════════════════════════════════
+//  2.  generatePatientReport
+//      (comprehensive report – available but
+//       currently not called by any route)
+// ══════════════════════════════════════════════
+const generatePatientReport = async (childId) => {
+  const child = await prisma.child.findUnique({
+    where: { id: childId },
+    include: {
+      parent: { select: { name: true, email: true } },
+      diagnoses: { orderBy: { createdAt: "desc" } },
+      progressNotes: { orderBy: { date: "desc" }, take: 10 },
+      therapySessions: {
+        include: { therapist: { select: { name: true } } },
+        orderBy: { schedule: "desc" },
+      },
+      gameLogs: { orderBy: { playedAt: "desc" }, take: 20 },
+      progressUploads: { orderBy: { createdAt: "desc" }, take: 10 },
+    },
+  });
+  if (!child) throw new Error("Child not found");
+
+  const { filePath } = getFilePath("report", childId);
+  const doc = new PDFDocument({
+    size: "A4",
+    margin: 0,
+    info: {
+      Title: `Laporan Perkembangan - ${child.name}`,
+      Author: "Pondok Terapi Bicara",
+      Subject: "Laporan Perkembangan Anak",
+    },
+  });
+  const stream = fs.createWriteStream(filePath);
+  doc.pipe(stream);
+
+  const pm = new PageManager(doc);
+  pm.drawHeader();
+
+  // ── COVER ──
+  pm.y += 4;
+  doc.rect(M, pm.y, CW, 80).fill(C.bgBlue);
+  doc.circle(M + 36, pm.y + 40, 24).fill(C.primary);
+  doc.fontSize(16).fillColor(C.white).font("Helvetica-Bold");
+  doc.text("PTB", M + 20, pm.y + 30, { width: 32, align: "center" });
+  doc.fillColor(C.primary).font("Helvetica-Bold").fontSize(18);
+  doc.text("Pondok Terapi Bicara", M + 70, pm.y + 16, { width: CW - 80 });
+  doc.fontSize(11).fillColor(C.medium).font("Helvetica");
+  doc.text("Laporan Perkembangan Anak", M + 70, pm.y + 38, { width: CW - 80 });
+  doc.fontSize(8.5).fillColor(C.light);
+  doc.text(
+    `Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`,
+    M + 70, pm.y + 56, { width: CW - 80 }
+  );
+  doc.fillColor(C.dark);
+  pm.y += 92;
+
+  // ── INFORMASI ANAK ──
+  pm.section("INFORMASI ANAK");
+
+  // Stat boxes
+  const age = calculateAge(child.dateOfBirth);
+  const totalSesi = child.therapySessions.length;
+  const totalGame = child.gameLogs.length;
+  const boxW = (CW - 20) / 3;
+
+  const statBox = (x, label, value) => {
+    doc.rect(x, pm.y, boxW, 30).fill(C.bgBlue);
+    doc.fontSize(7.5).fillColor(C.medium).font("Helvetica");
+    doc.text(label, x + 8, pm.y + 4, { width: boxW - 16 });
+    doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
+    doc.text(value, x + 8, pm.y + 16, { width: boxW - 16 });
+    doc.fillColor(C.dark);
+  };
+
+  statBox(M, "Usia", age);
+  statBox(M + boxW + 10, "Total Sesi Terapi", `${totalSesi} sesi`);
+  statBox(M + (boxW + 10) * 2, "Total Game", `${totalGame} game`);
+  pm.y += 38;
+
+  pm.infoRow("Nama Anak", child.name);
+  pm.infoRow("Tanggal Lahir", formatIdDate(child.dateOfBirth));
+  pm.infoRow("Jenis Kelamin", child.gender === "MALE" ? "Laki-laki" : "Perempuan");
+  pm.infoRow("Orang Tua", child.parent?.name || "-");
+  if (child.parent?.email) pm.infoRow("Email Orang Tua", child.parent.email);
+
+  // ── RIWAYAT DIAGNOSIS ──
+  if (child.diagnoses.length > 0) {
+    pm.section("RIWAYAT DIAGNOSIS");
+    drawTable(doc, pm, ["No", "Tanggal", "Level Risiko", "Skor", "Rekomendasi"],
+      child.diagnoses.map((d, i) => [
+        `${i + 1}`,
+        formatIdDate(d.createdAt),
+        d.riskLevel || "-",
+        String(d.score || "-"),
+        (d.recommendation || "-").substring(0, 40),
+      ])
+    );
+  }
+
+  // ── RIWAYAT SESI TERAPI ──
+  if (child.therapySessions.length > 0) {
+    pm.section("RIWAYAT SESI TERAPI");
+    drawTable(doc, pm, ["No", "Tanggal", "Tipe", "Terapis", "Bayar", "Aktif"],
+      child.therapySessions.map((s, i) => [
+        `${i + 1}`,
+        formatIdDate(s.schedule),
+        s.therapyType || "-",
+        s.therapist?.name || "-",
+        s.paymentStatus || "-",
+        s.isActive ? "Ya" : "Tidak",
+      ])
+    );
+  }
+
+  // ── LAPORAN TERAPI ──
+  if (child.progressNotes.length > 0) {
+    pm.section("LAPORAN TERAPI");
+    child.progressNotes.forEach((note, i) => {
+      pm.need(40);
+      const dateStr = formatIdDate(note.date);
+      const title = `${i + 1}. ${note.title || "Laporan Perkembangan"} — ${dateStr}`;
+
+      doc.rect(M, pm.y, CW, 0.5).fill(C.border);
+      pm.y += 4;
+      pm.text(title, { size: 10, font: "Helvetica-Bold", gap: 4 });
+
+      if (note.content) {
+        pm.text("Hasil Perkembangan", { size: 8.5, font: "Helvetica-Bold", color: C.primary, x: M + 4, w: CW - 4, gap: 3 });
+        note.content.split(/\\n|\n/).filter((l) => l.trim()).forEach((line) => {
+          pm.text(cleanLine(line), { x: M + 10, w: CW - 10, size: 9, gap: 3 });
+        });
+        pm.y += 2;
+      }
+
+      if (note.barriers && note.barriers.trim()) {
+        pm.text("Hambatan", { size: 8.5, font: "Helvetica-Bold", color: C.primary, x: M + 4, w: CW - 4, gap: 3 });
+        note.barriers.split(/\\n|\n/).filter((l) => l.trim()).forEach((line) => {
+          pm.text(cleanLine(line), { x: M + 10, w: CW - 10, size: 9, gap: 3 });
+        });
+        pm.y += 2;
+      }
+
+      const exs = parseParentExercises(note.parentExercises);
+      if (exs.length > 0) {
+        pm.text("Latihan di Rumah", { size: 8.5, font: "Helvetica-Bold", color: C.primary, x: M + 4, w: CW - 4, gap: 3 });
+        exs.forEach((ex, idx) => {
+          pm.text(`${idx + 1}. ${ex}`, { x: M + 10, w: CW - 10, size: 9, gap: 3 });
+        });
+      }
+
+      pm.y += 6;
+    });
+  }
+
+  // ── PROGRESS GAME ──
+  if (child.gameLogs.length > 0) {
+    pm.section("PROGRESS GAME LATIHAN");
+    drawTable(doc, pm, ["No", "Tanggal", "Tipe Game", "Skor", "Durasi"],
+      child.gameLogs.map((g, i) => [
+        `${i + 1}`,
+        formatIdDate(g.playedAt),
+        g.gameType || "-",
+        String(g.gameScore || 0),
+        formatDuration(g.duration || 0),
+      ])
+    );
+
+    // Summary
+    pm.need(40);
+    pm.y += 4;
+    const tScore = child.gameLogs.reduce((s, g) => s + (g.gameScore || 0), 0);
+    const avg = (tScore / child.gameLogs.length).toFixed(1);
+    const max = Math.max(...child.gameLogs.map((g) => g.gameScore || 0));
+    const tDur = child.gameLogs.reduce((s, g) => s + (g.duration || 0), 0);
+
+    doc.rect(M, pm.y, CW, 30).fill(C.bgBlue);
+    const sw = CW / 4;
+    [
+      { l: "Total Game", v: `${child.gameLogs.length}` },
+      { l: "Rata-rata", v: avg },
+      { l: "Tertinggi", v: String(max) },
+      { l: "Total Durasi", v: formatDuration(tDur) },
+    ].forEach((s, i) => {
+      doc.fontSize(7.5).fillColor(C.medium).font("Helvetica");
+      doc.text(s.l, M + i * sw + 4, pm.y + 4, { width: sw - 8, align: "center" });
+      doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
+      doc.text(s.v, M + i * sw + 4, pm.y + 16, { width: sw - 8, align: "center" });
+    });
+    pm.y += 36;
+    doc.fillColor(C.dark);
+  }
+
+  // ── CATATAN PERKEMBANGAN ──
+  if (child.progressUploads.length > 0) {
+    pm.section("CATATAN PERKEMBANGAN");
+    child.progressUploads.forEach((u, i) => {
+      pm.need(30);
+      doc.rect(M, pm.y, CW, 0.5).fill(C.border);
+      pm.y += 4;
+      pm.text(
+        `Catatan #${i + 1} — ${formatIdDate(u.createdAt)}`,
+        { size: 9.5, font: "Helvetica-Bold", gap: 4 }
+      );
+      if (u.parentNotes) pm.text(`Catatan Orang Tua: ${u.parentNotes}`, { size: 9, color: C.medium, gap: 3 });
+      if (u.therapistEvaluation) pm.text(`Evaluasi Terapis: ${u.therapistEvaluation}`, { size: 9, color: C.accent, font: "Helvetica-Oblique", gap: 3 });
+      pm.y += 4;
+    });
+  }
+
+  // ── CLOSING ──
+  pm.y += 10;
+  pm.text(
+    "Laporan ini dihasilkan secara otomatis oleh sistem Pondok Terapi Bicara. Untuk informasi lebih lanjut, silakan hubungi terapis yang menangani anak Anda.",
+    { size: 7.5, color: C.light, font: "Helvetica-Oblique", w: CW, gap: 0 }
+  );
+
+  pm.end();
+  await streamToPromise(stream);
+  return filePath;
+};
+
+// ──────────────────────────────────────────────
+//  TABLE HELPER (used by generatePatientReport)
+// ──────────────────────────────────────────────
+function drawTable(doc, pm, headers, rows) {
+  const colCount = headers.length;
+  const colW = CW / colCount;
+
+  // Header
+  doc.rect(M, pm.y, CW, 22).fill(C.primary);
+  doc.fontSize(8).fillColor(C.white).font("Helvetica-Bold");
+  headers.forEach((h, i) => {
+    doc.text(h, M + i * colW + 4, pm.y + 6, { width: colW - 8, align: "left" });
+  });
+  pm.y += 24;
+  doc.fillColor(C.dark);
+
+  // Rows
+  rows.forEach((cells, ri) => {
+    pm.need(22);
+    const bg = ri % 2 === 0 ? C.bgLight : C.white;
+    doc.rect(M, pm.y, CW, 20).fill(bg);
+    doc.fontSize(8).font("Helvetica").fillColor(C.dark);
+    cells.forEach((c, i) => {
+      doc.text(String(c || "-"), M + i * colW + 4, pm.y + 5, { width: colW - 8, align: "left" });
+    });
+    pm.y += 22;
+  });
+}
+
+// ──────────────────────────────────────────────
+//  EXPORTS
+// ──────────────────────────────────────────────
 module.exports = { generatePatientReport, generateSingleProgressReport };
