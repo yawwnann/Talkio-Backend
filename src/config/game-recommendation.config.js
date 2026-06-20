@@ -24,7 +24,7 @@ module.exports = [
     games: [
       {
         gameType: "Suara Binatang",
-        params: { choicesCount: 3, rounds: 6, hintMode: "audio" },
+        params: { choicesCount: 2, rounds: 6, hintMode: "audio" },
       },
     ],
   },
@@ -37,6 +37,10 @@ module.exports = [
         gameType: "Tebak Suara",
         params: { choicesCount: 3, rounds: 6, hintMode: "audio" },
       },
+      {
+        gameType: "Suara Binatang",
+        params: { choicesCount: 2, rounds: 6, hintMode: "audio" },
+      },
     ],
   },
   {
@@ -48,9 +52,10 @@ module.exports = [
         gameType: "Latihan Artikulasi",
         params: { rounds: 6, hintMode: "audio" },
       },
+
       {
-        gameType: "Kata Bergambar",
-        params: { rounds: 6, hintMode: "visual" },
+        gameType: "Suara Binatang",
+        params: { choicesCount: 2, rounds: 6, hintMode: "audio" },
       },
     ],
   },
@@ -69,7 +74,7 @@ module.exports = [
       },
       {
         gameType: "Suara Binatang",
-        params: { choicesCount: 4, rounds: 8, hintMode: "audio" },
+        params: { choicesCount: 2, rounds: 8, hintMode: "audio" },
       },
     ],
   },
