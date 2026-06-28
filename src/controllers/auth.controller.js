@@ -228,6 +228,43 @@ const logout = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return sendResponse(res, 400, "Old password and new password are required.");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return sendResponse(res, 404, "User not found.");
+    }
+
+    const validPassword = await bcrypt.compare(oldPassword, user.password);
+    if (!validPassword) {
+      return sendResponse(res, 400, "Password lama salah.");
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return sendResponse(res, 200, "Password berhasil diubah.");
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Terjadi kesalahan server.");
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -235,4 +272,5 @@ module.exports = {
   resetPassword,
   setRecoveryPin,
   logout,
+  changePassword,
 };

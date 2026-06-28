@@ -10,5 +10,6 @@ router.post("/forgot-password", validateForgotPassword, validate, authController
 router.post("/reset-password", validateResetPassword, validate, authController.resetPassword);
 router.put("/recovery-pin", authenticateToken, authController.setRecoveryPin);
 router.post("/logout", authenticateToken, authController.logout);
+router.put("/change-password", authenticateToken, authController.changePassword);
 
 module.exports = router;
